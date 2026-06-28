@@ -6,7 +6,7 @@ import FadeIn from '../FadeIn';
 
 const Music = () => {
     return (
-        <section className="bg-[#f8f6f2] flex flex-col items-center pt-24 pb-6 md:pt-32 px-4">
+        <section className="bg-[#f5f0e8] flex flex-col items-center pt-10 pb-6 md:pt-14 px-4">
 
             {/* Section Heading */}
             <FadeIn delay={0}>
@@ -16,7 +16,7 @@ const Music = () => {
             </FadeIn>
 
             {/* Music Image */}
-            <div className="w-[calc(100%+2rem)] -mx-4 sm:w-full sm:mx-auto max-w-5xl mb-4">
+            <div className="w-[calc(100%+2rem)] -mx-4 sm:w-full sm:mx-auto max-w-5xl mb-0">
                 <img
                     src={musicImg}
                     alt="Trincas Music"
@@ -29,7 +29,7 @@ const Music = () => {
 
                 {/* Vinyl Illustration with decorative scrolls */}
                 <FadeIn delay={0}>
-                    <div className="flex items-center justify-center my-6 opacity-80">
+                    <div className="flex items-center justify-center mt-2 mb-6 opacity-80">
                         <svg className="w-12 h-6" viewBox="0 0 60 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M55 10C55 10 50 10 48 8C46 6 44 4 40 4C36 4 34 6 30 6" stroke="#8B6914" strokeWidth="1" fill="none" />
                             <path d="M55 10C55 10 50 10 48 12C46 14 44 16 40 16C36 16 34 14 30 14" stroke="#8B6914" strokeWidth="1" fill="none" />

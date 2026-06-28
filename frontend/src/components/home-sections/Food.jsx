@@ -6,7 +6,7 @@ import FadeIn from '../FadeIn';
 
 const Food = () => {
   return (
-    <section className="bg-[#fff7ed] flex flex-col items-center py-6 px-4 mt-16 md:mt-24">
+    <section className="bg-[#f5f0e8] flex flex-col items-center py-6 px-4 mt-16 md:mt-24">
 
       {/* Section Heading */}
       <FadeIn delay={0}>

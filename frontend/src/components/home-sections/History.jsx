@@ -5,7 +5,7 @@ import FadeIn from '../FadeIn';
 
 const History = () => {
     return (
-        <section className="bg-[#fbfaf9] flex flex-col items-center pt-24 pb-6 md:pt-32 px-4 mb-16 md:mb-24">
+        <section className="bg-[#f5f0e8] flex flex-col items-center pt-10 pb-6 md:pt-14 px-4 mb-16 md:mb-24">
 
             {/* Section Heading */}
             <FadeIn delay={0}>
