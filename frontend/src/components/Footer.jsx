@@ -30,7 +30,6 @@ const Footer = () => {
                     <a href="/menu" className="hover:text-white transition-colors duration-200">Menu</a>
                     <a href="/music-schedule" className="hover:text-white transition-colors duration-200">Music</a>
                     <a href="/history" className="hover:text-white transition-colors duration-200">Our Story</a>
-                    <a href="/reservations" className="hover:text-white transition-colors duration-200">Reservations</a>
                 </nav>
 
                 {/* Contact Info */}

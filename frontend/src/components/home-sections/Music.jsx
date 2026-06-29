@@ -6,12 +6,12 @@ import FadeIn from '../FadeIn';
 
 const Music = () => {
     return (
-        <section className="bg-[#f5f0e8] flex flex-col items-center pt-10 pb-6 md:pt-14 px-4">
+        <section className="bg-[#f5f0e8] flex flex-col items-center pt-6 pb-4 px-4">
 
             {/* Section Heading */}
             <FadeIn delay={0}>
-                <h2 className="text-3xl md:text-4xl lg:text-5xl uppercase tracking-widest text-gray-900 mb-6 text-center">
-                    Where Heritage Meets Harmony
+                <h2 className="uppercase text-[#3D2B1F] text-center font-light mb-4">
+                    <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-[0.2em] sm:tracking-[0.3em] leading-none">Live Music</span>
                 </h2>
             </FadeIn>
 
@@ -24,22 +24,22 @@ const Music = () => {
                 />
             </div>
 
-            {/* Text Content */}
-            <div className="w-full max-w-3xl mx-auto text-center flex flex-col items-center">
+            {/* Text Content — vinyl overlaps image above */}
+            <div className="w-full max-w-3xl mx-auto text-center flex flex-col items-center -mt-6 relative z-10">
 
                 {/* Vinyl Illustration with decorative scrolls */}
                 <FadeIn delay={0}>
-                    <div className="flex items-center justify-center mt-2 mb-6 opacity-80">
-                        <svg className="w-12 h-6" viewBox="0 0 60 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <div className="flex items-center justify-center mb-3 opacity-80">
+                        <svg className="w-10 h-5" viewBox="0 0 60 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M55 10C55 10 50 10 48 8C46 6 44 4 40 4C36 4 34 6 30 6" stroke="#8B6914" strokeWidth="1" fill="none" />
                             <path d="M55 10C55 10 50 10 48 12C46 14 44 16 40 16C36 16 34 14 30 14" stroke="#8B6914" strokeWidth="1" fill="none" />
                         </svg>
                         <img
                             src={vinylImg}
                             alt="Vinyl"
-                            className="w-32 h-32 mx-3 object-contain"
+                            className="w-24 h-24 mx-3 object-contain"
                         />
-                        <svg className="w-12 h-6 scale-x-[-1]" viewBox="0 0 60 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg className="w-10 h-5 scale-x-[-1]" viewBox="0 0 60 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M55 10C55 10 50 10 48 8C46 6 44 4 40 4C36 4 34 6 30 6" stroke="#8B6914" strokeWidth="1" fill="none" />
                             <path d="M55 10C55 10 50 10 48 12C46 14 44 16 40 16C36 16 34 14 30 14" stroke="#8B6914" strokeWidth="1" fill="none" />
                         </svg>
@@ -48,22 +48,15 @@ const Music = () => {
 
                 {/* Body Paragraph */}
                 <FadeIn delay={0.2}>
-                    <div className="text-lg md:text-xl text-gray-800 leading-relaxed max-w-2xl px-2 space-y-4">
-                        <p>
-                            For decades, Trincas has been more than a restaurant.
-                        </p>
-                        <p>
-                            It has been a stage for timeless melodies,<br />
-                            where music, like our cuisine,<br />
-                            is served with soul.
-                        </p>
+                    <div className="text-base md:text-lg text-gray-800 leading-relaxed max-w-2xl px-2 mb-3">
+                        <p>More than a restaurant — a stage for timeless melodies, where music is served with soul.</p>
                     </div>
                 </FadeIn>
 
             </div>
 
             {/* Buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+            <div className="mt-2 flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
                 <FadeIn delay={0.3}>
                     <Button
                         navigation="/music-schedule"

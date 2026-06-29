@@ -5,12 +5,12 @@ import FadeIn from '../FadeIn';
 
 const History = () => {
     return (
-        <section className="bg-[#f5f0e8] flex flex-col items-center pt-10 pb-6 md:pt-14 px-4 mb-16 md:mb-24">
+        <section className="bg-[#f5f0e8] flex flex-col items-center pt-6 pb-4 px-4 mb-10 md:mb-16">
 
             {/* Section Heading */}
             <FadeIn delay={0}>
-                <h2 className="text-3xl md:text-4xl lg:text-5xl uppercase tracking-widest text-gray-900 mb-6 text-center">
-                    A Story That Stands The Test Of Time
+                <h2 className="uppercase text-[#3D2B1F] text-center font-light mb-4">
+                    <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-[0.2em] sm:tracking-[0.3em] leading-none">Our Heritage</span>
                 </h2>
             </FadeIn>
 
@@ -28,7 +28,7 @@ const History = () => {
 
                 {/* Diamond Separator */}
                 <FadeIn delay={0}>
-                    <div className="flex items-center justify-center my-6 opacity-70">
+                    <div className="flex items-center justify-center my-3 opacity-70">
                         <div className="w-16 h-[1px] bg-yellow-600/60"></div>
                         <div className="w-2.5 h-2.5 rotate-45 bg-yellow-600/60 mx-2"></div>
                         <div className="w-16 h-[1px] bg-yellow-600/60"></div>
@@ -37,16 +37,8 @@ const History = () => {
 
                 {/* Body Paragraph */}
                 <FadeIn delay={0.2}>
-                    <div className="text-lg md:text-xl text-gray-800 leading-relaxed max-w-2xl px-2 space-y-4">
-                        <p>
-                            Since 1927, Trincas has been woven into the fabric of Calcutta.
-                        </p>
-                        <p>
-                            Through generations, it has remained a place<br />
-                            where traditions are honoured,<br />
-                            stories are shared,<br />
-                            and memories are made.
-                        </p>
+                    <div className="text-base md:text-lg text-gray-800 leading-relaxed max-w-2xl px-2 mb-3">
+                        <p>Since 1927, Trincas has been woven into the fabric of Calcutta — where traditions and memories live on.</p>
                     </div>
                 </FadeIn>
 
@@ -54,7 +46,7 @@ const History = () => {
 
             {/* CTA Button */}
             <FadeIn delay={0.35}>
-                <div className="mt-8 flex justify-center w-full">
+                <div className="mt-4 flex justify-center w-full">
                     <Button
                         navigation="/history"
                         bgColor="#541A1A"
