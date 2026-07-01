@@ -6,10 +6,10 @@ import musicImg from '../../assets/music.png';
 import historyImg from '../../assets/history.png';
 
 const frames = [
-  { img: diningImg, heading: 'Dining Spaces' },
-  { img: foodImg, heading: 'Food & Beverages' },
-  { img: musicImg, heading: 'Music' },
-  { img: historyImg, heading: 'History' },
+  { img: diningImg,  heading: 'Dining Spaces',   compact: false, bg: 'rgba(246, 229, 205)' },
+  { img: foodImg,    heading: 'Food & Beverages', compact: false, bg: 'rgba(249, 233, 210)' },
+  { img: musicImg,   heading: 'Music',            compact: true,  bg: 'rgba(239, 222, 197)' },
+  { img: historyImg, heading: 'History',          compact: true,  bg: 'rgba(244, 229, 207)' },
 ];
 
 /* Small ornamental divider below headings */
@@ -26,17 +26,24 @@ const OrnamentalDivider = () => (
   </div>
 );
 
-const FrameCard = ({ img, heading }) => (
-  <div className="w-full flex flex-col items-center">
-    <div className="w-full" style={{ maxWidth: 520 }}>
-      <img
-        src={img}
-        alt={heading}
-        className="w-full object-cover rounded-2xl"
-        style={{ aspectRatio: '16 / 10' }}
-        loading="lazy"
-      />
-    </div>
+const FrameCard = ({ img, heading, compact, currentBg, prevBg }) => (
+  <section 
+    className="w-full" 
+    style={{ 
+      background: `linear-gradient(to bottom, ${prevBg} 0%, ${currentBg} 15%, ${currentBg} 100%)` 
+    }}
+  >
+    <div className="mx-auto flex flex-col items-center" style={{ maxWidth: 600, padding: '1.5rem 1.25rem' }}>
+      <div className="w-full" style={{ maxWidth: compact ? 460 : 520 }}>
+        <img
+          src={img}
+          alt={heading}
+          className={`w-full ${compact ? 'object-contain' : 'object-cover rounded-2xl'}`}
+          style={{ aspectRatio: '16 / 10' }}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
 
     <h2
       className="mt-3 sm:mt-4 text-center"
@@ -52,22 +59,29 @@ const FrameCard = ({ img, heading }) => (
     </h2>
 
     <OrnamentalDivider />
-  </div>
+    </div>
+  </section>
 );
 
 const Home = () => {
+  const pageBg = 'rgba(239, 222, 197)';
   return (
     <main
       className="w-full"
-      style={{ backgroundColor: 'rgba(249, 233, 209, 1)' }}
+      style={{ backgroundColor: pageBg }}
     >
-      <div
-        className="mx-auto flex flex-col items-center gap-2 sm:gap-4"
-        style={{ maxWidth: 600, padding: '1rem 1rem 1.5rem' }}
-      >
-        {frames.map((frame) => (
-          <FrameCard key={frame.heading} {...frame} />
-        ))}
+      <div className="w-full flex flex-col">
+        {frames.map((frame, index) => {
+          const prevBg = index === 0 ? pageBg : frames[index - 1].bg;
+          return (
+            <FrameCard 
+              key={frame.heading} 
+              {...frame} 
+              prevBg={prevBg} 
+              currentBg={frame.bg} 
+            />
+          );
+        })}
       </div>
     </main>
   );
