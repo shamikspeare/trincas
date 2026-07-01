@@ -12,7 +12,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <a href="/">
-              <img className="h-10 w-auto" src={logo} alt="Logo" />
+              <img className="h-10 w-auto" src={logo} alt="Trincas" />
             </a>
           </div>
 

@@ -1,46 +1,74 @@
 import React from 'react';
-import Hero from '../home-sections/Hero';
-import Food from '../home-sections/Food';
-import Music from '../home-sections/Music';
-import History from '../home-sections/History';
+
+import diningImg from '../../assets/dining.png';
+import foodImg from '../../assets/food.png';
+import musicImg from '../../assets/music.png';
+import historyImg from '../../assets/history.png';
+
+const frames = [
+  { img: diningImg, heading: 'Dining Spaces' },
+  { img: foodImg, heading: 'Food & Beverages' },
+  { img: musicImg, heading: 'Music' },
+  { img: historyImg, heading: 'History' },
+];
+
+/* Small ornamental divider below headings */
+const OrnamentalDivider = () => (
+  <div className="flex items-center justify-center mt-3 gap-1.5 opacity-50">
+    <div className="w-8 h-[1px]" style={{ backgroundColor: '#3D2B1F' }} />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M8 2 C10 5, 14 6, 14 8 C14 10, 10 11, 8 14 C6 11, 2 10, 2 8 C2 6, 6 5, 8 2Z"
+        fill="#3D2B1F"
+      />
+    </svg>
+    <div className="w-8 h-[1px]" style={{ backgroundColor: '#3D2B1F' }} />
+  </div>
+);
+
+const FrameCard = ({ img, heading }) => (
+  <div className="w-full flex flex-col items-center">
+    <div className="w-full" style={{ maxWidth: 520 }}>
+      <img
+        src={img}
+        alt={heading}
+        className="w-full object-cover rounded-2xl"
+        style={{ aspectRatio: '16 / 10' }}
+        loading="lazy"
+      />
+    </div>
+
+    <h2
+      className="mt-3 sm:mt-4 text-center"
+      style={{
+        fontFamily: "'Cormorant Garamond', serif",
+        fontSize: 'clamp(1.5rem, 4vw, 2rem)',
+        fontWeight: 500,
+        color: '#3D2B1F',
+        letterSpacing: '0.02em',
+      }}
+    >
+      {heading}
+    </h2>
+
+    <OrnamentalDivider />
+  </div>
+);
 
 const Home = () => {
   return (
-    <main>
-      <Hero />
-      <Food />
-      <Music />
-
-      {/* Ornamental Divider */}
-      <div className="w-full flex items-center justify-center py-6 px-6 bg-[#f5f0e8]">
-        <div className="flex items-center w-full max-w-sm">
-          <div className="flex-1 h-[1px] bg-[#3D2B1F]"></div>
-          <svg
-            viewBox="0 0 80 28"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="mx-2 w-16 h-7 shrink-0"
-          >
-            {/* left small dot */}
-            <circle cx="8" cy="14" r="2.5" fill="#3D2B1F" />
-            {/* left medium dot */}
-            <circle cx="20" cy="14" r="3.5" fill="#3D2B1F" />
-            {/* center large cluster */}
-            <circle cx="40" cy="14" r="6" fill="#3D2B1F" />
-            <circle cx="40" cy="5"  r="2.8" fill="#3D2B1F" />
-            <circle cx="40" cy="23" r="2.8" fill="#3D2B1F" />
-            <circle cx="31" cy="14" r="2.2" fill="#3D2B1F" />
-            <circle cx="49" cy="14" r="2.2" fill="#3D2B1F" />
-            {/* right medium dot */}
-            <circle cx="60" cy="14" r="3.5" fill="#3D2B1F" />
-            {/* right small dot */}
-            <circle cx="72" cy="14" r="2.5" fill="#3D2B1F" />
-          </svg>
-          <div className="flex-1 h-[1px] bg-[#3D2B1F]"></div>
-        </div>
+    <main
+      className="w-full"
+      style={{ backgroundColor: 'rgba(249, 233, 209, 1)' }}
+    >
+      <div
+        className="mx-auto flex flex-col items-center gap-2 sm:gap-4"
+        style={{ maxWidth: 600, padding: '1rem 1rem 1.5rem' }}
+      >
+        {frames.map((frame) => (
+          <FrameCard key={frame.heading} {...frame} />
+        ))}
       </div>
-
-      <History />
     </main>
   );
 };

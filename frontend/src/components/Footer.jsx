@@ -1,5 +1,4 @@
 import React from 'react';
-import logo from '../assets/logo.png';
 
 const Footer = () => {
     return (
@@ -7,11 +6,9 @@ const Footer = () => {
             <div className="max-w-5xl mx-auto flex flex-col items-center text-center">
 
                 {/* Logo */}
-                <img
-                    src={logo}
-                    alt="Trincas"
-                    className="h-12 mb-6 brightness-0 invert opacity-90"
-                />
+                <h2 className="text-3xl font-serif tracking-widest text-[#d4c9b8] mb-6">
+                    TRINCAS
+                </h2>
 
                 {/* Tagline */}
                 <p className="italic text-lg md:text-xl text-[#c4b8a4] mb-8">
