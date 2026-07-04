@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Breadcrumb from '../Breadcrumb';
 
-import indianImg from '../../assets/food-indian.jpeg';
+import indianImg from '../../assets/food-indian.jpg';
 import chineseImg from '../../assets/food-chinese.jpg';
-import continentalImg from '../../assets/food-continental.jpeg';
+import continentalImg from '../../assets/food-continental.jpg';
 import cafeImg from '../../assets/food-cafe.jpg';
 
 const frames = [
