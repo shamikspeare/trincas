@@ -80,7 +80,7 @@ const Navbar = () => {
             initial="closed"
             animate="open"
             exit="exit"
-            className="fixed inset-0 z-[55] bg-white flex flex-col"
+            className="fixed inset-0 z-[55] bg-white flex flex-col overflow-y-auto"
             style={{ paddingTop: '3.5rem' /* height of navbar (h-14) */ }}
           >
             {/* Nav links */}
@@ -88,7 +88,7 @@ const Navbar = () => {
               variants={containerVariants}
               initial="closed"
               animate="open"
-              className="flex flex-col justify-center flex-1 px-8 gap-4"
+              className="flex flex-col flex-1 px-8 gap-4 pt-12 pb-8"
             >
               {NAV_LINKS.map((link) => {
                 const isActive = location.pathname === link.to;
@@ -114,7 +114,7 @@ const Navbar = () => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45, duration: 0.3 }}
-              className="px-8 pb-40 sm:pb-52 flex flex-col gap-4"
+              className="px-8 pb-12 sm:pb-16 pt-8 flex flex-col gap-4 mt-auto"
             >
               {/* Contact */}
               <div className="text-xs text-gray-500 space-y-1">

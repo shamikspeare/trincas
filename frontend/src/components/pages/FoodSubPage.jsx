@@ -45,7 +45,7 @@ const TextButton = ({ heading, index, link }) => (
 const FoodSubPage = ({ title, basePath }) => {
   const buttons = [
     { heading: 'Menu', link: `${basePath}/menu` },
-    { heading: 'Most Loved Dishes', link: `${basePath}/most-loved` },
+    { heading: title === 'Drinks' ? 'Most Loved Drinks' : 'Most Loved Dishes', link: `${basePath}/most-loved` },
     { heading: 'History', link: `${basePath}/history` },
   ];
 

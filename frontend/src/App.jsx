@@ -23,6 +23,7 @@ function App() {
             <Route path="/food-indian" element={<FoodSubPage title="Indian" basePath="/food-indian" />} />
             <Route path="/food-chinese" element={<FoodSubPage title="Chinese" basePath="/food-chinese" />} />
             <Route path="/food-continental" element={<FoodSubPage title="Continental" basePath="/food-continental" />} />
+            <Route path="/food-drinks" element={<FoodSubPage title="Drinks" basePath="/food-drinks" />} />
             <Route path="/food-cafe" element={<FoodSubPage title="Cafe" basePath="/food-cafe" />} />
             <Route path="/music" element={<Music />} />
             <Route path="/history" element={<History />} />

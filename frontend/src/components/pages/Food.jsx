@@ -6,12 +6,14 @@ import Breadcrumb from '../Breadcrumb';
 import indianImg from '../../assets/food-indian.jpg';
 import chineseImg from '../../assets/food-chinese.jpg';
 import continentalImg from '../../assets/food-continental.jpg';
+import drinksImg from '../../assets/food-drinks.png';
 import cafeImg from '../../assets/food-cafe.jpg';
 
 const frames = [
   { img: indianImg, heading: 'Indian', compact: false, link: '/food-indian' },
   { img: chineseImg, heading: 'Chinese', compact: false, link: '/food-chinese' },
   { img: continentalImg, heading: 'Continental', compact: false, link: '/food-continental' },
+  { img: drinksImg, heading: 'Drinks', compact: false, link: '/food-drinks' },
   { img: cafeImg, heading: 'Cafe', compact: false, link: '/food-cafe' },
 ];
 

@@ -6,7 +6,7 @@ import diningImg from '../../assets/dining.png';
 import foodImg from '../../assets/food.png';
 import musicImg from '../../assets/music.png';
 import historyImg from '../../assets/history.png';
-import pressImg from '../../assets/home-press.jpeg';
+import pressImg from '../../assets/home-press.jpg';
 
 const frames = [
   { img: diningImg, heading: 'Dining Spaces', compact: false, bg: 'rgba(246, 229, 205)', link: '/dining' },
