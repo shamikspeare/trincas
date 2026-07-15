@@ -2,11 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-import diningImg from '../../assets/dining.png';
-import foodImg from '../../assets/food.png';
-import musicImg from '../../assets/music.png';
-import historyImg from '../../assets/history.png';
-import pressImg from '../../assets/home-press.jpg';
+import diningImg from '../../assets/dining.jpeg';
+import foodImg from '../../assets/food.jpeg';
+import musicImg from '../../assets/music.jpeg';
+import historyImg from '../../assets/history.jpeg';
+import pressImg from '../../assets/home-press.jpeg';
 
 const frames = [
   { img: diningImg, heading: 'Dining Spaces', compact: false, bg: 'rgba(246, 229, 205)', link: '/dining' },
@@ -57,8 +57,7 @@ const FrameCard = ({ img, heading, compact, index, link }) => (
         <img
           src={img}
           alt={heading}
-          className={`w-full ${compact ? 'object-contain' : 'object-cover rounded-2xl'}`}
-          style={{ aspectRatio: '16 / 10' }}
+          className="w-full h-auto block"
           loading="lazy"
           decoding="async"
         />
