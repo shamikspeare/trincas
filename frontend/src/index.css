@@ -3,3 +3,14 @@
 @theme {
   --font-sans: "Cormorant Garamond", serif;
 }
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #ffffff;
+}
+
+body {
+  margin: 0;
+}

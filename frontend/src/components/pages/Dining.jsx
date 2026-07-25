@@ -126,7 +126,7 @@ const FrameCard = ({ img, heading, headingStyle, titleImg, titleImgStyle, compac
 
 const Dining = () => {
   return (
-    <main className="w-full bg-[#fff7ed] min-h-[60vh] flex flex-col">
+    <main className="w-full bg-white min-h-[60vh] flex flex-col">
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Dining Spaces' }]} />
       <div className="w-full flex flex-col pt-6 pb-12">
         {frames.map((frame, index) => (

@@ -83,7 +83,7 @@ const FrameCard = ({ img, heading, compact, index, link }) => (
 
 const Home = () => {
   return (
-    <main className="w-full bg-[#fbfaf9] pt-12">
+    <main className="w-full bg-white pt-12">
       <div className="w-full flex flex-col">
         {frames.map((frame, index) => (
           <FrameCard

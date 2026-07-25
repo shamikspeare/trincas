@@ -60,7 +60,7 @@ const FoodSubPage = ({ title, basePath }) => {
   ];
 
   return (
-    <main className="w-full bg-[#fbfaf9] min-h-[60vh] flex flex-col">
+    <main className="w-full bg-white min-h-[60vh] flex flex-col">
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Food & Beverages', link: '/food' }, { label: title }]} />
       <div className="w-full flex flex-col pt-12 pb-16 flex-1 px-0">
         {buttons.map((btn, index) => (

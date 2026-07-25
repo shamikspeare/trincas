@@ -48,14 +48,14 @@ const cardVariants = {
 /* Small ornamental divider below headings */
 const OrnamentalDivider = () => (
   <div className="flex items-center justify-center mt-3 gap-1.5 opacity-50">
-    <div className="w-8 h-[1px]" style={{ backgroundColor: '#ffffff' }} />
+    <div className="w-8 h-[1px]" style={{ backgroundColor: '#000000' }} />
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path
         d="M8 2 C10 5, 14 6, 14 8 C14 10, 10 11, 8 14 C6 11, 2 10, 2 8 C2 6, 6 5, 8 2Z"
-        fill="#ffffff"
+        fill="#000000"
       />
     </svg>
-    <div className="w-8 h-[1px]" style={{ backgroundColor: '#ffffff' }} />
+    <div className="w-8 h-[1px]" style={{ backgroundColor: '#000000' }} />
   </div>
 );
 
@@ -66,7 +66,7 @@ const extraButtons = [
 
 const Music = () => {
   return (
-    <main className="w-full bg-black min-h-screen flex flex-col text-white">
+    <main className="w-full bg-white min-h-screen flex flex-col text-gray-900">
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Music' }]} />
 
       {/* Section title */}
@@ -76,7 +76,7 @@ const Music = () => {
             fontFamily: "'Cormorant Garamond', serif",
             fontSize: 'clamp(3rem, 6vw, 4.5rem)',
             fontWeight: 500,
-            color: '#ffffff',
+            color: '#000000',
             letterSpacing: '0.04em',
             textAlign: 'center',
           }}
@@ -154,7 +154,7 @@ const Music = () => {
                   fontFamily: "'Cormorant Garamond', serif",
                   fontSize: 'clamp(2rem, 5vw, 3rem)',
                   fontWeight: 500,
-                  color: '#ffffff',
+                  color: '#000000',
                   letterSpacing: '0.02em',
                 }}
               >
