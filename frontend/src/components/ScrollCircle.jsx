@@ -137,8 +137,8 @@ export default function ScrollCircle() {
 
                     ${
                       isMainTick
-                        ? "w-[10px] sm:w-[12px] bg-gray-800"
-                        : "w-[5px] sm:w-[6px] bg-gray-300"
+                        ? "w-[30px] sm:w-[50px] bg-gray-800"
+                        : "w-[20px] sm:w-[30px] bg-gray-300"
                     }
                   `}
                 />
