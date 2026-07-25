@@ -129,7 +129,7 @@ export default function ScrollCircle() {
                 {/* Tick */}
                 <span
                   className={`
-                    shrink-0 h-[1px]
+                    shrink-0 h-[2px]
 
                     ml-[185px]
                     sm:ml-[250px]
