@@ -16,19 +16,24 @@ const decades = [
 // 42 ticks
 const TOTAL_TICKS = 42;
 const TICKS_PER_DECADE = TOTAL_TICKS / decades.length;
-// Angle between two decades
+
+// Angle between decades
 const STEP_ANGLE = (360 / TOTAL_TICKS) * TICKS_PER_DECADE;
-// Makes 1950s start on the center horizontal line
+
+// Makes 1950s start on center horizontal line
 const INITIAL_ROTATION = 90;
 
 export default function ScrollCircle() {
   const dialRef = useRef(null);
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const isAnimating = useRef(false);
   const [showButton, setShowButton] = useState(true);
+
+  const isAnimating = useRef(false);
 
   const animateToIndex = (index) => {
     if (!dialRef.current) return;
+
     isAnimating.current = true;
     setShowButton(false);
 
@@ -45,8 +50,9 @@ export default function ScrollCircle() {
 
   const next = () => {
     if (isAnimating.current) return;
+
     setCurrentIndex((prev) => {
-      const nextIndex = prev + 1; // infinite
+      const nextIndex = prev + 1;
       animateToIndex(nextIndex);
       return nextIndex;
     });
@@ -54,33 +60,27 @@ export default function ScrollCircle() {
 
   const previous = () => {
     if (isAnimating.current) return;
+
     setCurrentIndex((prev) => {
-      const nextIndex = prev - 1; // infinite
+      const nextIndex = prev - 1;
       animateToIndex(nextIndex);
       return nextIndex;
     });
   };
 
   const handleWheel = (e) => {
-    if (e.deltaY > 0) {
-      next();
-    } else if (e.deltaY < 0) {
-      previous();
-    }
+    if (e.deltaY > 0) next();
+    else previous();
   };
 
-  // TikTok / YT Shorts style: react to even tiny flicks via velocity
   const handlePanEnd = (_, info) => {
     const { offset, velocity } = info;
 
-    // Very low distance threshold + velocity check (flick detection)
     const isFlick =
       Math.abs(offset.y) > 8 || Math.abs(velocity.y) > 200;
 
     if (!isFlick) return;
 
-    // Drag / flick up → clockwise (next)
-    // Drag / flick down → counter-clockwise (previous)
     if (offset.y < 0 || velocity.y < 0) {
       next();
     } else {
@@ -94,19 +94,26 @@ export default function ScrollCircle() {
       onWheel={handleWheel}
       onPanEnd={handlePanEnd}
     >
-      {/* Positioning Wrapper */}
-      <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-        {/* Rotating Dial */}
+      {/* Dial */}
+      <div className="pointer-events-none absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
           ref={dialRef}
-          className="relative flex h-[400px] w-[400px] items-center justify-center bg-transparent md:h-[700px] md:w-[700px]"
+          className="
+            relative flex items-center justify-center bg-transparent
+
+            h-[300px] w-[300px]
+            sm:h-[400px] sm:w-[400px]
+            md:h-[700px] md:w-[700px]
+          "
           style={{
             transform: `rotate(${INITIAL_ROTATION}deg)`,
           }}
         >
           {[...Array(TOTAL_TICKS).keys()].map((_, index) => {
             const angle = (index / TOTAL_TICKS) * 360;
+
             const isMainTick = index % TICKS_PER_DECADE === 0;
+
             const decadeText = isMainTick
               ? decades[index / TICKS_PER_DECADE]
               : null;
@@ -121,16 +128,37 @@ export default function ScrollCircle() {
               >
                 {/* Tick */}
                 <span
-                  className={`ml-[250px] md:ml-[500px] h-[1px] shrink-0 ${
-                    isMainTick
-                      ? "w-[12px] bg-gray-800"
-                      : "w-[6px] bg-gray-300"
-                  }`}
+                  className={`
+                    shrink-0 h-[1px]
+
+                    ml-[185px]
+                    sm:ml-[250px]
+                    md:ml-[500px]
+
+                    ${
+                      isMainTick
+                        ? "w-[10px] sm:w-[12px] bg-gray-800"
+                        : "w-[5px] sm:w-[6px] bg-gray-300"
+                    }
+                  `}
                 />
 
-                {/* Decade */}
+                {/* Text */}
                 {isMainTick && (
-                  <span className="ml-[20px] whitespace-nowrap text-[40px] font-medium text-gray-400 md:ml-[18px]">
+                  <span
+                    className="
+                      whitespace-nowrap
+                      font-medium
+                      text-gray-400
+
+                      ml-[14px]
+                      sm:ml-[20px]
+                      md:ml-[18px]
+
+                      text-[26px]
+                      sm:text-[40px]
+                    "
+                  >
                     {decadeText}
                   </span>
                 )}
@@ -140,20 +168,57 @@ export default function ScrollCircle() {
         </div>
       </div>
 
-      {/* Explore button – sits just below the active decade text */}
-      <div className="absolute inset-x-0 top-[calc(50%+30px)] z-10 flex justify-end pr-[25px] md:top-[calc(50%+36px)]">
+      {/* Button */}
+      <div
+        className="
+          absolute inset-x-0
+          flex justify-end z-10
+
+          top-[calc(50%+22px)]
+          pr-4
+
+          sm:top-[calc(50%+30px)]
+          sm:pr-[25px]
+
+          md:top-[calc(50%+36px)]
+        "
+      >
         <motion.button
-          className="flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white md:px-6 md:py-3 md:text-base"
+          className="
+            flex items-center gap-2
+            rounded-full
+            bg-black
+            text-white
+            font-medium
+
+            px-4 py-2 text-xs
+
+            sm:px-5 sm:py-2.5 sm:text-sm
+
+            md:px-6 md:py-3 md:text-base
+          "
           initial={false}
           animate={{
             opacity: showButton ? 1 : 0,
             y: showButton ? 0 : 6,
           }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          style={{ pointerEvents: showButton ? "auto" : "none" }}
+          transition={{
+            duration: 0.25,
+            ease: "easeOut",
+          }}
+          style={{
+            pointerEvents: showButton ? "auto" : "none",
+          }}
         >
           Explore
-          <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+
+          <ArrowRight
+            className="
+              h-3.5 w-3.5
+              sm:h-4 sm:w-4
+              md:h-5 md:w-5
+            "
+          />
         </motion.button>
       </div>
     </motion.section>
