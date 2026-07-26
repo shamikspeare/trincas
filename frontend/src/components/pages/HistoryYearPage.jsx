@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import YearDial from "./YearDial";
 import historyImg from "../../assets/history.jpeg";
 import diningImg from "../../assets/dining.jpeg";
@@ -71,10 +72,6 @@ export default function HistoryYearPage() {
         type="button"
         onClick={() => navigate("/history")}
         className="
-          fixed z-30
-          top-[74px] left-4
-          sm:left-6
-          md:left-10
           rounded-full bg-gray-200 text-gray-700
           px-3 py-1.5 text-xs
           sm:px-4 sm:py-2 sm:text-sm
@@ -85,11 +82,14 @@ export default function HistoryYearPage() {
           cursor-pointer
         "
       >
-        Change Decade
+        <span className="flex items-center gap-2">
+          <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+          <span>Change Decade</span>
+        </span>
       </button>
 
       <section className="mx-auto flex w-full max-w-7xl flex-col items-center">
-        <div className="mt-10 sm:mt-12 md:mt-14 w-full">
+        <div className="mt-16 sm:mt-20 md:mt-24 w-full">
           <YearDial years={years} activeYear={activeYear} setActiveYear={setActiveYear} />
         </div>
       </section>

@@ -125,6 +125,7 @@ export default function ScrollCircle() {
       onPan={handlePan}
       onPanEnd={handlePanEnd}
     >
+      
       {/* Dial */}
       <div className="pointer-events-none absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div

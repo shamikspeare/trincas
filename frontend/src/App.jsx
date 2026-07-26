@@ -7,7 +7,7 @@ import Food from './components/pages/Food'
 import Music from './components/pages/Music'
 import History from './components/pages/History'
 import FoodSubPage from './components/pages/FoodSubPage'
-import HistoryYearPage from './pages/HistoryYearPage'
+import HistoryYearPage from './components/pages/HistoryYearPage'
 
 function App() {
   return (

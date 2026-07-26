@@ -99,26 +99,26 @@ export default function YearDial({ years, activeYear, setActiveYear }) {
         onPanEnd={handlePanEnd}
         className="
           relative touch-none 
-          py-8 px-12 sm:py-10 sm:px-16 md:py-12 md:px-24
+          py-10 px-[3.75rem] sm:py-12 sm:px-20 md:py-[3.75rem] md:px-[7.5rem]
           flex items-center justify-center
         "
       >
         <div
           className="
             relative
-            h-[100px] w-[100px]
-            sm:h-[138px] sm:w-[138px]
-            md:h-[250px] md:w-[250px]
+            h-[125px] w-[125px]
+            sm:h-[173px] sm:w-[173px]
+            md:h-[313px] md:w-[313px]
           "
         >
           {/* Solid left-pointing arrow outside dial & year labels (points to active year) */}
-          <div className="absolute left-full top-1/2 -translate-y-1/2 z-20 pointer-events-none ml-[75px] sm:ml-[90px] md:ml-[129px]">
+          <div className="absolute left-full top-1/2 -translate-y-1/2 z-20 pointer-events-none ml-[94px] sm:ml-[113px] md:ml-[161px]">
             <div
               className="
                 w-0 h-0
-                border-t-[9.5px] border-b-[9.5px] border-r-[13px]
-                sm:border-t-[11.5px] sm:border-b-[11.5px] sm:border-r-[15px]
-                md:border-t-[15px] md:border-b-[15px] md:border-r-[20.5px]
+                border-t-[12px] border-b-[12px] border-r-[16px]
+                sm:border-t-[14.5px] sm:border-b-[14.5px] sm:border-r-[19px]
+                md:border-t-[19px] md:border-b-[19px] md:border-r-[26px]
                 border-t-transparent border-b-transparent border-r-black
               "
             />
@@ -128,9 +128,9 @@ export default function YearDial({ years, activeYear, setActiveYear }) {
             ref={dialRef}
             className="
               relative flex items-center justify-center bg-transparent
-              h-[100px] w-[100px]
-              sm:h-[138px] sm:w-[138px]
-              md:h-[250px] md:w-[250px]
+              h-[125px] w-[125px]
+              sm:h-[173px] sm:w-[173px]
+              md:h-[313px] md:w-[313px]
             "
             style={{
               transform: `rotate(${INITIAL_ROTATION}deg)`,
@@ -152,13 +152,13 @@ export default function YearDial({ years, activeYear, setActiveYear }) {
                   <span
                     className={`
                       shrink-0 h-[1px]
-                      ml-[60px]
-                      sm:ml-[81px]
-                      md:ml-[150px]
+                      ml-[75px]
+                      sm:ml-[101px]
+                      md:ml-[188px]
                       ${
                         isMainTick
-                          ? "w-[13px] sm:w-[16px] md:w-[25px] bg-gray-800"
-                          : "w-[8px] sm:w-[10px] md:w-[15px] bg-gray-300"
+                          ? "w-[16px] sm:w-[20px] md:w-[31px] bg-gray-800"
+                          : "w-[10px] sm:w-[13px] md:w-[19px] bg-gray-300"
                       }
                     `}
                   />
@@ -167,8 +167,8 @@ export default function YearDial({ years, activeYear, setActiveYear }) {
                     <span
                       className="
                         whitespace-nowrap font-medium text-gray-400
-                        ml-[6px] sm:ml-[8px] md:ml-[10px]
-                        text-[14px] sm:text-[16px] md:text-[22px]
+                        ml-[8px] sm:ml-[10px] md:ml-[13px]
+                        text-[18px] sm:text-[20px] md:text-[28px]
                       "
                     >
                       {yearText}
@@ -180,13 +180,13 @@ export default function YearDial({ years, activeYear, setActiveYear }) {
           </div>
 
           {/* Center active year */}
-          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[22px] sm:text-[25px] md:text-[38px] font-semibold text-gray-900">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[28px] sm:text-[31px] md:text-[48px] font-semibold text-gray-900">
             {activeYear}
           </div>
         </div>
       </motion.div>
 
-      <div className="mt-12 mb-16 flex flex-col items-center text-gray-300 sm:mt-10 sm:mb-20 md:mt-12 md:mb-24">
+      <div className="mt-12 mb-8 flex flex-col items-center text-gray-300 sm:mt-10 sm:mb-12 md:mt-12 md:mb-14">
         <ChevronsDown className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />
         <p className="mt-3 text-xs sm:text-sm font-medium tracking-[0.12em]">Scroll Down</p>
       </div>

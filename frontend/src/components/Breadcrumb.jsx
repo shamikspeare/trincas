@@ -27,9 +27,10 @@ const Breadcrumb = ({ items }) => {
       initial="visible"
       animate={hidden ? "hidden" : "visible"}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="sticky top-14 z-40 w-full pointer-events-none"
+      // Added bg-transparent to explicitly enforce a transparent floating overlay wrapper
+      className="sticky top-14 z-40 w-full bg-transparent pointer-events-none"
     >
-      <div className="flex items-center gap-2 px-4 py-3 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
+      <div className="flex items-center gap-2 px-4 py-3 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto bg-transparent">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center justify-center w-[26px] h-[26px] min-w-[26px] bg-black/40 backdrop-blur-md text-white rounded-full hover:bg-black/60 transition-colors shadow-sm pointer-events-auto"
