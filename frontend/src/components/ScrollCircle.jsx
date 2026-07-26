@@ -87,7 +87,7 @@ export default function ScrollCircle() {
   const handlePan = (_, info) => {
     // info.delta.y is the movement since last event
     const delta = info.delta.y * 0.35;
-    applyRotation(-delta);
+    applyRotation(delta);
   };
 
   // Optional light inertia on release (still continuous, no discrete flick)
@@ -101,7 +101,7 @@ export default function ScrollCircle() {
     // short coast that decays naturally
     const coast = velocity * 0.08;
     gsap.to(currentRotation, {
-      current: currentRotation.current - coast,
+      current: currentRotation.current + coast,
       duration: 0.6,
       ease: "power2.out",
       onUpdate: () => {
