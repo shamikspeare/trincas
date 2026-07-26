@@ -113,8 +113,8 @@ const Press = () => {
           </h1>
         </div>
 
-        {/* Gallery */}
-        <div className="max-w-7xl mx-auto grid grid-cols-3 min-[500px]:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-5 md:gap-6 lg:gap-8">
+        {/* Gallery – 2 columns on mobile/extra-small, 2 on tablet, 3 on desktop */}
+        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-5 md:gap-6 lg:gap-8">
           {pressImages.map((src, index) => (
             <div
               key={index}
