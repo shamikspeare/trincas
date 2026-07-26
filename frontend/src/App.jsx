@@ -8,6 +8,7 @@ import Music from './components/pages/Music'
 import History from './components/pages/History'
 import FoodSubPage from './components/pages/FoodSubPage'
 import HistoryYearPage from './components/pages/HistoryYearPage'
+import Press from './components/pages/Press'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="/music" element={<Music />} />
             <Route path="/history" element={<History />} />
             <Route path="/history/:decade" element={<HistoryYearPage />} />
+            <Route path="/press" element={<Press />} />
           </Routes>
         </div>
       </div>
