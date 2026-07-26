@@ -1,7 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import gsap from "gsap";
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const decades = [
   "1950s",
@@ -13,85 +14,115 @@ const decades = [
   "2010s",
 ];
 
-// 42 ticks
 const TOTAL_TICKS = 42;
 const TICKS_PER_DECADE = TOTAL_TICKS / decades.length;
-
-// Angle between decades
 const STEP_ANGLE = (360 / TOTAL_TICKS) * TICKS_PER_DECADE;
-
-// Makes 1950s start on center horizontal line
 const INITIAL_ROTATION = 90;
 
+// How close (in degrees) a decade must be to the active position to show the button
+const SNAP_THRESHOLD = 10;
+
 export default function ScrollCircle() {
+  const containerRef = useRef(null);
   const dialRef = useRef(null);
-
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentRotation = useRef(INITIAL_ROTATION);
   const [showButton, setShowButton] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const navigate = useNavigate();
 
-  const isAnimating = useRef(false);
+  // Helper: update button visibility based on how close we are to a decade
+  const updateButtonVisibility = useCallback(() => {
+    // Convert current rotation back to a continuous index
+    const continuousIndex =
+      (INITIAL_ROTATION - currentRotation.current) / STEP_ANGLE;
 
-  const animateToIndex = (index) => {
+    const nearest = Math.round(continuousIndex);
+    const distance = Math.abs(continuousIndex - nearest) * STEP_ANGLE;
+
+    const isNear = distance < SNAP_THRESHOLD;
+
+    setShowButton(isNear);
+    if (isNear) {
+      const len = decades.length;
+      // Use modulo arithmetic to ensure activeIndex loops correctly and handles negative values
+      const wrappedIndex = ((nearest % len) + len) % len;
+      setActiveIndex(wrappedIndex);
+    }
+  }, []);
+
+  // Continuous rotation (no snapping / no flick)
+  const applyRotation = useCallback((deltaDegrees) => {
     if (!dialRef.current) return;
 
-    isAnimating.current = true;
-    setShowButton(false);
+    currentRotation.current += deltaDegrees;
+    gsap.set(dialRef.current, {
+      rotate: currentRotation.current,
+    });
 
-    gsap.to(dialRef.current, {
-      rotate: INITIAL_ROTATION + index * STEP_ANGLE,
+    updateButtonVisibility();
+  }, [updateButtonVisibility]);
+
+  // Desktop wheel → continuous
+  // Attached natively to avoid passive event listener warnings
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      // positive deltaY (scroll down) rotates one way, negative the other
+      // sensitivity tuned for a natural feel
+      const delta = e.deltaY * 0.12;
+      applyRotation(-delta);
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, [applyRotation]);
+
+  // Mobile drag → continuous (updates every frame of the pan)
+  const handlePan = (_, info) => {
+    // info.delta.y is the movement since last event
+    const delta = info.delta.y * 0.35;
+    applyRotation(-delta);
+  };
+
+  // Optional light inertia on release (still continuous, no discrete flick)
+  const handlePanEnd = (_, info) => {
+    const velocity = info.velocity.y;
+    if (Math.abs(velocity) < 80) {
+      updateButtonVisibility();
+      return;
+    }
+
+    // short coast that decays naturally
+    const coast = velocity * 0.08;
+    gsap.to(currentRotation, {
+      current: currentRotation.current - coast,
       duration: 0.6,
-      ease: "power3.out",
-      onComplete: () => {
-        isAnimating.current = false;
-        setShowButton(true);
+      ease: "power2.out",
+      onUpdate: () => {
+        if (!dialRef.current) return;
+        gsap.set(dialRef.current, {
+          rotate: currentRotation.current,
+        });
+        updateButtonVisibility();
       },
     });
   };
 
-  const next = () => {
-    if (isAnimating.current) return;
-
-    setCurrentIndex((prev) => {
-      const nextIndex = prev + 1;
-      animateToIndex(nextIndex);
-      return nextIndex;
-    });
-  };
-
-  const previous = () => {
-    if (isAnimating.current) return;
-
-    setCurrentIndex((prev) => {
-      const nextIndex = prev - 1;
-      animateToIndex(nextIndex);
-      return nextIndex;
-    });
-  };
-
-  const handleWheel = (e) => {
-    if (e.deltaY > 0) next();
-    else previous();
-  };
-
-  const handlePanEnd = (_, info) => {
-    const { offset, velocity } = info;
-
-    const isFlick =
-      Math.abs(offset.y) > 8 || Math.abs(velocity.y) > 200;
-
-    if (!isFlick) return;
-
-    if (offset.y < 0 || velocity.y < 0) {
-      next();
-    } else {
-      previous();
-    }
+  const handleExploreClick = () => {
+    navigate(`/history/${decades[activeIndex]}`);
   };
 
   return (
     <motion.section
+      ref={containerRef}
       className="relative h-[calc(100vh-64px)] w-full overflow-hidden bg-white text-gray-900 touch-none"
-      onWheel={handleWheel}
+      onPan={handlePan}
       onPanEnd={handlePanEnd}
     >
       {/* Dial */}
@@ -100,7 +131,6 @@ export default function ScrollCircle() {
           ref={dialRef}
           className="
             relative flex items-center justify-center bg-transparent
-
             h-[300px] w-[300px]
             sm:h-[400px] sm:w-[400px]
             md:h-[700px] md:w-[700px]
@@ -111,9 +141,7 @@ export default function ScrollCircle() {
         >
           {[...Array(TOTAL_TICKS).keys()].map((_, index) => {
             const angle = (index / TOTAL_TICKS) * 360;
-
             const isMainTick = index % TICKS_PER_DECADE === 0;
-
             const decadeText = isMainTick
               ? decades[index / TICKS_PER_DECADE]
               : null;
@@ -126,15 +154,12 @@ export default function ScrollCircle() {
                   transform: `rotate(${angle - 90}deg)`,
                 }}
               >
-                {/* Tick */}
                 <span
                   className={`
                     shrink-0 h-[2px]
-
                     ml-[185px]
                     sm:ml-[250px]
                     md:ml-[500px]
-
                     ${
                       isMainTick
                         ? "w-[30px] sm:w-[50px] bg-gray-800"
@@ -143,20 +168,12 @@ export default function ScrollCircle() {
                   `}
                 />
 
-                {/* Text */}
                 {isMainTick && (
                   <span
                     className="
-                      whitespace-nowrap
-                      font-medium
-                      text-gray-400
-
-                      ml-[14px]
-                      sm:ml-[20px]
-                      md:ml-[18px]
-
-                      text-[26px]
-                      sm:text-[40px]
+                      whitespace-nowrap font-medium text-gray-400
+                      ml-[14px] sm:ml-[20px] md:ml-[18px]
+                      text-[26px] sm:text-[40px]
                     "
                   >
                     {decadeText}
@@ -168,59 +185,35 @@ export default function ScrollCircle() {
         </div>
       </div>
 
-      {/* Button */}
-      <div
+      {/* Explore button – only visible when a decade is near the active position */}
+      <motion.button
         className="
-          absolute inset-x-0
-          flex justify-end z-10
+          absolute z-10 flex items-center gap-2
+          rounded-full bg-black text-white font-medium
 
-          top-[calc(50%+22px)]
-          pr-4
+          right-[10px] top-[calc(50%+28px)]
+          px-4 py-2 text-xs
 
-          sm:top-[calc(50%+30px)]
-          sm:pr-[25px]
+          sm:right-[10px] sm:top-[calc(50%+34px)]
+          sm:px-5 sm:py-2.5 sm:text-sm
 
-          md:top-[calc(50%+36px)]
+          md:right-auto md:left-[530px] md:top-[calc(50%+38px)]
+          md:px-6 md:py-3 md:text-base
         "
+        initial={false}
+        animate={{
+          opacity: showButton ? 1 : 0,
+          y: showButton ? 0 : 8,
+        }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        style={{
+          pointerEvents: showButton ? "auto" : "none",
+        }}
+        onClick={handleExploreClick}
       >
-        <motion.button
-          className="
-            flex items-center gap-2
-            rounded-full
-            bg-black
-            text-white
-            font-medium
-
-            px-4 py-2 text-xs
-
-            sm:px-5 sm:py-2.5 sm:text-sm
-
-            md:px-6 md:py-3 md:text-base
-          "
-          initial={false}
-          animate={{
-            opacity: showButton ? 1 : 0,
-            y: showButton ? 0 : 6,
-          }}
-          transition={{
-            duration: 0.25,
-            ease: "easeOut",
-          }}
-          style={{
-            pointerEvents: showButton ? "auto" : "none",
-          }}
-        >
-          Explore
-
-          <ArrowRight
-            className="
-              h-3.5 w-3.5
-              sm:h-4 sm:w-4
-              md:h-5 md:w-5
-            "
-          />
-        </motion.button>
-      </div>
+        Explore
+        <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+      </motion.button>
     </motion.section>
   );
 }
