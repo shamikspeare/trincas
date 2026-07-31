@@ -65,7 +65,7 @@ const Press = () => {
   }, [selectedImageIndex]);
 
   return (
-    <main className="w-full bg-gray-100 min-h-screen grid">
+    <main className="w-full bg-stone-100 min-h-screen grid">
       {selectedImageIndex === null && (
         <div className="col-start-1 row-start-1 w-full z-50 pointer-events-none">
           <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Press' }]} />
@@ -74,10 +74,12 @@ const Press = () => {
 
       <div className="col-start-1 row-start-1 w-full pb-6 pt-10">
         {/* Header */}
-        <div className="max-w-7xl mx-auto mb-8 text-center">
+        <div className="max-w-7xl mx-auto mt-[10px] mb-8 text-center">
           <h1 className="text-3xl font-serif tracking-wide text-gray-900">
             PRESS
           </h1>
+          <p className="mt-2 text-xs text-gray-600">A curated archive of media features, editorial highlights, and press coverage.
+Documenting our work and milestones as published across global outlets.</p>
         </div>
 
         {/* Gallery – 2 columns, zero gap */}
@@ -85,7 +87,7 @@ const Press = () => {
           {pressImages.map((src, index) => (
             <div
               key={index}
-              className="relative overflow-hidden rounded-none border border-black aspect-[3/4] cursor-pointer bg-gray-100"
+              className="relative overflow-hidden rounded-none border border-gray-800 aspect-[3/4] cursor-pointer bg-gray-100"
               onClick={() => openModal(index)}
             >
               <img
@@ -102,16 +104,27 @@ const Press = () => {
         {/* Modal – mobile only */}
         {selectedImageIndex !== null && (
           <div
-            className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md transition-opacity duration-300 ${
+            className={`fixed inset-0 z-50 flex flex-col justify-between items-center pt-[74px] pb-6 px-4 bg-black/60 backdrop-blur-md transition-opacity duration-300 ${
               isAnimating ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={closeModal}
           >
+            {/* Top Left Close Button - offset below navbar */}
+            <div className="w-full flex justify-start">
+              <button
+                onClick={closeModal}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-white shadow-md active:scale-95 transition"
+                aria-label="Close"
+              >
+                <span className="text-black text-lg leading-none font-light">×</span>
+              </button>
+            </div>
+
+            {/* Centered Image + Hint */}
             <div
-              className="flex flex-col items-center px-4"
+              className="flex flex-col items-center justify-center my-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Image – fits screen, center aligned */}
               <img
                 src={pressImages[selectedImageIndex]}
                 alt={`Press coverage ${selectedImageIndex + 1}`}
@@ -128,15 +141,6 @@ const Press = () => {
               <p className="mt-3 text-[10px] leading-none text-white/80 tracking-wide">
                 pinch to zoom in/out
               </p>
-
-              {/* Cross button */}
-              <button
-                onClick={closeModal}
-                className="mt-2 flex items-center justify-center w-8 h-8 rounded-full bg-white shadow-md active:scale-95 transition"
-                aria-label="Close"
-              >
-                <span className="text-black text-lg leading-none font-light">×</span>
-              </button>
             </div>
           </div>
         )}
