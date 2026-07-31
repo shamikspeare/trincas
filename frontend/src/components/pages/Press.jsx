@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import Breadcrumb from '../Breadcrumb';
-
 import pressImage1 from '../../assets/press/press-image1.png';
 import pressImage2 from '../../assets/press/press-image2.png';
 import pressImage3 from '../../assets/press/press-image3.png';
@@ -116,7 +116,7 @@ Documenting our work and milestones as published across global outlets.</p>
                 className="flex items-center justify-center w-8 h-8 rounded-full bg-white shadow-md active:scale-95 transition"
                 aria-label="Close"
               >
-                <span className="text-black text-lg leading-none font-light">×</span>
+                <X className="w-4 h-4 text-black" />
               </button>
             </div>
 
