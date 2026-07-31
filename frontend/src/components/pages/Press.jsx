@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Breadcrumb from '../Breadcrumb';
 
 import pressImage1 from '../../assets/press/press-image1.png';
@@ -45,25 +44,6 @@ const Press = () => {
     setTimeout(() => setSelectedImageIndex(null), 300);
   };
 
-  const goToPrevious = (e) => {
-    e.stopPropagation();
-    setSelectedImageIndex((prev) =>
-      prev === 0 ? pressImages.length - 1 : prev - 1
-    );
-  };
-
-  const goToNext = (e) => {
-    e.stopPropagation();
-    setSelectedImageIndex((prev) =>
-      prev === pressImages.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  const goToIndex = (e, index) => {
-    e.stopPropagation();
-    setSelectedImageIndex(index);
-  };
-
   useEffect(() => {
     if (selectedImageIndex !== null) {
       document.body.style.overflow = 'hidden';
@@ -73,20 +53,7 @@ const Press = () => {
 
     const handleKeyDown = (e) => {
       if (selectedImageIndex === null) return;
-
       if (e.key === 'Escape') closeModal();
-
-      if (e.key === 'ArrowLeft') {
-        setSelectedImageIndex((prev) =>
-          prev === 0 ? pressImages.length - 1 : prev - 1
-        );
-      }
-
-      if (e.key === 'ArrowRight') {
-        setSelectedImageIndex((prev) =>
-          prev === pressImages.length - 1 ? 0 : prev + 1
-        );
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -98,27 +65,27 @@ const Press = () => {
   }, [selectedImageIndex]);
 
   return (
-    <main className="w-full bg-black min-h-screen grid">
+    <main className="w-full bg-gray-100 min-h-screen grid">
       {selectedImageIndex === null && (
         <div className="col-start-1 row-start-1 w-full z-50 pointer-events-none">
           <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Press' }]} />
         </div>
       )}
 
-      <div className="col-start-1 row-start-1 w-full px-1.5 pb-6 pt-24 sm:px-6 sm:pt-32 sm:pb-12 md:pt-36 md:pb-24 lg:px-8">
+      <div className="col-start-1 row-start-1 w-full pb-6 pt-10">
         {/* Header */}
-        <div className="max-w-7xl mx-auto mt-[10px] mb-8 sm:mb-12 md:mb-16 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif tracking-wide text-gray-100">
+        <div className="max-w-7xl mx-auto mb-8 text-center">
+          <h1 className="text-3xl font-serif tracking-wide text-gray-900">
             PRESS
           </h1>
         </div>
 
-        {/* Gallery – 2 columns on mobile/extra-small, 2 on tablet, 3 on desktop */}
-        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-5 md:gap-6 lg:gap-8">
+        {/* Gallery – 2 columns, zero gap */}
+        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-0">
           {pressImages.map((src, index) => (
             <div
               key={index}
-              className="relative overflow-hidden rounded-2xl aspect-[3/4] cursor-pointer group bg-gray-50"
+              className="relative overflow-hidden rounded-none border border-black aspect-[3/4] cursor-pointer bg-gray-100"
               onClick={() => openModal(index)}
             >
               <img
@@ -126,88 +93,50 @@ const Press = () => {
                 alt={`Press coverage ${index + 1}`}
                 loading="lazy"
                 decoding="async"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                className="absolute inset-0 w-full h-full object-contain"
               />
             </div>
           ))}
         </div>
 
-        {/* Modal */}
+        {/* Modal – mobile only */}
         {selectedImageIndex !== null && (
           <div
-            className={`fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm transition-opacity duration-300 ${
+            className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md transition-opacity duration-300 ${
               isAnimating ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={closeModal}
           >
-            {/* Image + Dots — no stopPropagation on this wrapper itself,
-                so clicks on its empty padding/gaps fall through and close the modal */}
-            <div className="flex flex-col items-center px-6 sm:px-12">
+            <div
+              className="flex flex-col items-center px-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Image – fits screen, center aligned */}
               <img
                 src={pressImages[selectedImageIndex]}
                 alt={`Press coverage ${selectedImageIndex + 1}`}
                 loading="lazy"
                 decoding="async"
-                onClick={(e) => e.stopPropagation()}
-                className={`max-w-[90vw] max-h-[72vh] sm:max-w-[80vw] sm:max-h-[78vh] lg:max-w-[70vw] object-contain transition-all duration-300 ${
+                className={`max-w-[92vw] max-h-[70vh] w-auto h-auto object-contain transition-all duration-300 ${
                   isAnimating
                     ? 'opacity-100 scale-100'
                     : 'opacity-0 scale-95'
                 }`}
               />
 
-              {/* Navigation */}
-              <div className="flex items-center justify-center gap-5 mt-6">
-                {/* Previous */}
-                <button
-                  onClick={goToPrevious}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-lg hover:scale-105 transition"
-                  aria-label="Previous"
-                >
-                  <ChevronLeft className="w-5 h-5 text-black" />
-                </button>
+              {/* Hint text */}
+              <p className="mt-3 text-[10px] leading-none text-white/80 tracking-wide">
+                pinch to zoom in/out
+              </p>
 
-                {/* Sliding Dots */}
-                <div className="flex items-center gap-2 min-w-[56px] justify-center">
-                  {(() => {
-                    let start = Math.max(0, selectedImageIndex - 1);
-
-                    if (start + 3 > pressImages.length) {
-                      start = pressImages.length - 3;
-                    }
-
-                    start = Math.max(0, start);
-
-                    return pressImages
-                      .slice(start, start + 3)
-                      .map((_, localIndex) => {
-                        const index = start + localIndex;
-
-                        return (
-                          <button
-                            key={index}
-                            onClick={(e) => goToIndex(e, index)}
-                            aria-label={`Go to image ${index + 1}`}
-                            className={`rounded-full transition-all duration-300 ${
-                              index === selectedImageIndex
-                                ? 'w-6 h-2 bg-white'
-                                : 'w-2 h-2 bg-white/40 hover:bg-white/70'
-                            }`}
-                          />
-                        );
-                      });
-                  })()}
-                </div>
-
-                {/* Next */}
-                <button
-                  onClick={goToNext}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-lg hover:scale-105 transition"
-                  aria-label="Next"
-                >
-                  <ChevronRight className="w-5 h-5 text-black" />
-                </button>
-              </div>
+              {/* Cross button */}
+              <button
+                onClick={closeModal}
+                className="mt-2 flex items-center justify-center w-8 h-8 rounded-full bg-white shadow-md active:scale-95 transition"
+                aria-label="Close"
+              >
+                <span className="text-black text-lg leading-none font-light">×</span>
+              </button>
             </div>
           </div>
         )}
