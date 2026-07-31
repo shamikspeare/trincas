@@ -65,7 +65,7 @@ const Press = () => {
   }, [selectedImageIndex]);
 
   return (
-    <main className="w-full bg-stone-50 min-h-screen grid">
+    <main className="w-full bg-white min-h-screen grid">
       {selectedImageIndex === null && (
         <div className="col-start-1 row-start-1 w-full z-50 pointer-events-none">
           <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Press' }]} />
@@ -78,7 +78,7 @@ const Press = () => {
           <h1 className="text-3xl font-serif tracking-wide text-gray-900">
             PRESS
           </h1>
-          <p className="mt-2 text-xs text-gray-600 mx-9">A curated archive of media features, editorial highlights, and press coverage.
+          <p className="mt-2 text-xs text-gray-600 mx-8 italic">A curated archive of media features, editorial highlights, and press coverage.
 Documenting our work and milestones as published across global outlets.</p>
         </div>
 
