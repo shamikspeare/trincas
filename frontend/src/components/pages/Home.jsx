@@ -7,7 +7,7 @@ import foodImg from '../../assets/food.jpeg';
 import musicImg from '../../assets/music.jpeg';
 import historyImg from '../../assets/history.jpeg';
 import pressImg from '../../assets/home-press.jpeg';
-import prideImg from '../../assets/home-pride.png';
+import prideImg from '../../assets/home-pride3.png';
 
 const frames = [
   { img: diningImg, heading: 'Dining Spaces', compact: false, bg: 'rgba(246, 229, 205)', link: '/dining' },
@@ -15,7 +15,7 @@ const frames = [
   { img: musicImg, heading: 'Music', compact: false, bg: 'rgba(239, 222, 197)', link: '/music' },
   { img: historyImg, heading: 'History', compact: false, bg: 'rgba(244, 229, 207)', link: '/history' },
   { img: pressImg, heading: 'Press', compact: false, link: '/press' },
-  { img: prideImg, heading: 'Pride', compact: false, link: '/pride' },
+  { img: prideImg, heading: 'Pride', compact: false, link: '/pride', rounded: true },
 ];
 
 /* Small ornamental divider below headings */
@@ -46,7 +46,7 @@ const cardVariants = {
   })
 };
 
-const FrameCard = ({ img, heading, compact, index, link }) => (
+const FrameCard = ({ img, heading, compact, index, link, rounded }) => (
   <motion.section
     className="w-full"
     custom={index}
@@ -59,7 +59,7 @@ const FrameCard = ({ img, heading, compact, index, link }) => (
         <img
           src={img}
           alt={heading}
-          className="w-full h-auto block"
+          className={`w-full h-auto block ${rounded ? 'rounded-[24px]' : ''}`}
           loading="lazy"
           decoding="async"
         />

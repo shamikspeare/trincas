@@ -49,7 +49,7 @@ const PrideCard = ({ img, heading, link, index, description, disabled = false })
     >
       <CardTag
         {...(link ? { to: link } : { type: 'button', disabled })}
-        className={`mx-auto flex w-full max-w-2xl flex-col items-center rounded-[24px] border border-black/10 transition-opacity ${
+        className={`mx-auto flex w-full max-w-2xl flex-col items-center transition-opacity ${
           disabled ? 'cursor-default' : 'hover:opacity-90'
         }`}
         style={{ padding: index === 0 ? '1.5rem 1.25rem' : '0.25rem 1.25rem 1.5rem 1.25rem' }}
@@ -70,8 +70,20 @@ const PrideCard = ({ img, heading, link, index, description, disabled = false })
             fontFamily: "'Cormorant Garamond', serif",
             fontSize: 'clamp(2rem, 5vw, 3rem)',
             fontWeight: 500,
-            color: '#000000',
             letterSpacing: '0.02em',
+            backgroundImage:
+              'linear-gradient(90deg, ' +
+              '#FF0018 0%, ' +
+              '#FFA52C 16.6%, ' +
+              '#FFFF41 33.3%, ' +
+              '#008026 50%, ' +
+              '#004DFF 66.6%, ' +
+              '#750787 83.3%, ' +
+              '#FF0018 100%)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            color: 'transparent',
           }}
         >
           {heading}
@@ -91,10 +103,23 @@ const PrideCard = ({ img, heading, link, index, description, disabled = false })
 
 export default function Pride() {
   return (
-    <main className="w-full bg-white pt-12 pb-8">
+    <main
+      className="w-full pt-12 pb-8"
+      style={{
+        background:
+          'linear-gradient(135deg, ' +
+          'rgba(255, 0, 24, 0.18) 0%, ' +
+          'rgba(255, 165, 44, 0.18) 16.6%, ' +
+          'rgba(255, 239, 0, 0.18) 33.3%, ' +
+          'rgba(0, 128, 38, 0.18) 50%, ' +
+          'rgba(0, 77, 255, 0.18) 66.6%, ' +
+          'rgba(117, 7, 135, 0.18) 83.3%, ' +
+          'rgba(255, 0, 24, 0.18) 100%)',
+      }}
+    >
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Pride' }]} />
 
-      <div className="w-full grid gap-px">
+      <div className="w-full flex flex-col">
         <PrideCard
           img={prideLgbtqImg}
           heading="LGBTQ"
