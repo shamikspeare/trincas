@@ -49,7 +49,7 @@ const PrideCard = ({ img, heading, link, index, description, disabled = false })
     >
       <CardTag
         {...(link ? { to: link } : { type: 'button', disabled })}
-        className={`mx-auto flex w-full max-w-2xl flex-col items-center transition-opacity ${
+        className={`mx-auto flex w-full max-w-2xl flex-col items-center rounded-[24px] border border-black/10 transition-opacity ${
           disabled ? 'cursor-default' : 'hover:opacity-90'
         }`}
         style={{ padding: index === 0 ? '1.5rem 1.25rem' : '0.25rem 1.25rem 1.5rem 1.25rem' }}
@@ -94,7 +94,7 @@ export default function Pride() {
     <main className="w-full bg-white pt-12 pb-8">
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Pride' }]} />
 
-      <div className="w-full flex flex-col">
+      <div className="w-full grid gap-px">
         <PrideCard
           img={prideLgbtqImg}
           heading="LGBTQ"

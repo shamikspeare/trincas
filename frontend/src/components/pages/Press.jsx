@@ -87,7 +87,7 @@ Documenting our work and milestones as published across global outlets.</p>
           {pressImages.map((src, index) => (
             <div
               key={index}
-              className="relative overflow-hidden rounded-none border border-gray-800 aspect-[3/4] cursor-pointer bg-gray-100"
+              className="relative overflow-hidden rounded-none border border-gray-500 aspect-[3/4] cursor-pointer bg-gray-100"
               onClick={() => openModal(index)}
             >
               <img
