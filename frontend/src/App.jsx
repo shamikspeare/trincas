@@ -9,6 +9,8 @@ import History from './components/pages/History'
 import FoodSubPage from './components/pages/FoodSubPage'
 import HistoryYearPage from './components/pages/HistoryYearPage'
 import Press from './components/pages/Press'
+import Pride from './components/pages/Pride'
+import PrideLgbtqSubPage from './components/pages/PrideLgbtqSubPage'
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
             <Route path="/history" element={<History />} />
             <Route path="/history/:decade" element={<HistoryYearPage />} />
             <Route path="/press" element={<Press />} />
+            <Route path="/pride" element={<Pride />} />
+            <Route path="/pride-lgbtq" element={<PrideLgbtqSubPage />} />
           </Routes>
         </div>
       </div>

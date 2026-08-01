@@ -7,6 +7,7 @@ import foodImg from '../../assets/food.jpeg';
 import musicImg from '../../assets/music.jpeg';
 import historyImg from '../../assets/history.jpeg';
 import pressImg from '../../assets/home-press.jpeg';
+import prideImg from '../../assets/home-pride.png';
 
 const frames = [
   { img: diningImg, heading: 'Dining Spaces', compact: false, bg: 'rgba(246, 229, 205)', link: '/dining' },
@@ -14,6 +15,7 @@ const frames = [
   { img: musicImg, heading: 'Music', compact: false, bg: 'rgba(239, 222, 197)', link: '/music' },
   { img: historyImg, heading: 'History', compact: false, bg: 'rgba(244, 229, 207)', link: '/history' },
   { img: pressImg, heading: 'Press', compact: false, link: '/press' },
+  { img: prideImg, heading: 'Pride', compact: false, link: '/pride' },
 ];
 
 /* Small ornamental divider below headings */

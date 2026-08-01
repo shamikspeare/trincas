@@ -21,7 +21,7 @@ const menuImages = {
   Chinese: chineseMenuImg,
   Continental: continentalMenuImg,
   Cafe: cafeMenuImg,
-  Drinks: foodDrinksImg,
+  Drinks: cafeMenuImg,
 };
 
 const featuredDishes = {
