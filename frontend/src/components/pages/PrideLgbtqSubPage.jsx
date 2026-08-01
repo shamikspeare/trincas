@@ -54,7 +54,20 @@ const cardVariants = {
 
 const PrideLgbtqSubPage = () => {
   return (
-    <main className="min-h-screen bg-white">
+    <main
+      className="min-h-screen"
+      style={{
+        background:
+          'linear-gradient(135deg, ' +
+          'rgba(255, 0, 24, 0.18) 0%, ' +
+          'rgba(255, 165, 44, 0.18) 16.6%, ' +
+          'rgba(255, 239, 0, 0.18) 33.3%, ' +
+          'rgba(0, 128, 38, 0.18) 50%, ' +
+          'rgba(0, 77, 255, 0.18) 66.6%, ' +
+          'rgba(117, 7, 135, 0.18) 83.3%, ' +
+          'rgba(255, 0, 24, 0.18) 100%)',
+      }}
+    >
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Pride', link: '/pride' }, { label: 'LGBTQ' }]} />
 
       <motion.div
@@ -64,7 +77,24 @@ const PrideLgbtqSubPage = () => {
         animate="visible"
       >
         <div className="mb-8 text-center">
-          <h1 className="font-serif text-[clamp(2.25rem,7vw,4rem)] leading-none text-[#111111]">
+          <h1
+            className="font-serif text-[clamp(2.25rem,7vw,4rem)] leading-none"
+            style={{
+              backgroundImage:
+                'linear-gradient(90deg, ' +
+                '#FF0018 0%, ' +
+                '#FFA52C 16.6%, ' +
+                '#FFFF41 33.3%, ' +
+                '#008026 50%, ' +
+                '#004DFF 66.6%, ' +
+                '#750787 83.3%, ' +
+                '#FF0018 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              color: 'transparent',
+            }}
+          >
             LGBTQ
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
