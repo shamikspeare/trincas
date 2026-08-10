@@ -82,12 +82,12 @@ const Press = () => {
 Documenting our work and milestones as published across global outlets.</p>
         </div>
 
-        {/* Gallery – 2 columns, zero gap */}
-        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-0">
+        {/* Gallery – 2 columns, larger gap */}
+        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-4 px-4">
           {pressImages.map((src, index) => (
             <div
               key={index}
-              className="relative overflow-hidden rounded-none border border-gray-500 aspect-[3/4] cursor-pointer bg-gray-100"
+              className="relative overflow-hidden rounded-2xl aspect-[3/4] cursor-pointer bg-gray-100"
               onClick={() => openModal(index)}
             >
               <img
@@ -96,6 +96,17 @@ Documenting our work and milestones as published across global outlets.</p>
                 loading="lazy"
                 decoding="async"
                 className="absolute inset-0 w-full h-full object-contain"
+              />
+
+              {/* Smooth blur+darken overlay: flush to bottom/left/right edges, strongest at bottom, fades to nothing at top with no hard edge */}
+              <div
+                className="pointer-events-none absolute inset-0 backdrop-blur-xl bg-black/60"
+                style={{
+                  maskImage:
+                    'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,0.9) 22%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0) 100%)',
+                  WebkitMaskImage:
+                    'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,0.9) 22%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0) 100%)',
+                }}
               />
             </div>
           ))}
