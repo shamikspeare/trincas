@@ -82,12 +82,12 @@ const Press = () => {
 Documenting our work and milestones as published across global outlets.</p>
         </div>
 
-        {/* Gallery – 2 columns, larger gap */}
-        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-4 px-4">
+        {/* Gallery – 2 columns, 1px gap */}
+        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-px">
           {pressImages.map((src, index) => (
             <div
               key={index}
-              className="relative overflow-hidden rounded-2xl aspect-[3/4] cursor-pointer bg-gray-100"
+              className="relative overflow-hidden rounded-md aspect-[3/4] cursor-pointer bg-gray-100"
               onClick={() => openModal(index)}
             >
               <img
@@ -95,7 +95,7 @@ Documenting our work and milestones as published across global outlets.</p>
                 alt={`Press coverage ${index + 1}`}
                 loading="lazy"
                 decoding="async"
-                className="absolute inset-0 w-full h-full object-contain"
+                className="absolute inset-0 w-full h-full object-cover object-top scale-110 translate-y-2 origin-top"
               />
 
               {/* Smooth blur+darken overlay: flush to bottom/left/right edges, strongest at bottom, fades to nothing at top with no hard edge */}

@@ -1,21 +1,9 @@
-import React from 'react';
+// src/pages/Food.jsx
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Breadcrumb from '../Breadcrumb';
-
-import indianImg from '../../assets/food-indian.jpg';
-import chineseImg from '../../assets/food-chinese.jpg';
-import continentalImg from '../../assets/food-continental.jpg';
-import drinksImg from '../../assets/food-drinks.png';
-import cafeImg from '../../assets/food-cafe.jpg';
-
-const frames = [
-  { img: indianImg, heading: 'Indian', compact: false, link: '/food-indian' },
-  { img: chineseImg, heading: 'Chinese', compact: false, link: '/food-chinese' },
-  { img: continentalImg, heading: 'Continental', compact: false, link: '/food-continental' },
-  { img: drinksImg, heading: 'Drinks', compact: false, link: '/food-drinks' },
-  { img: cafeImg, heading: 'Cafe', compact: false, link: '/food-cafe' },
-];
+import { supabase } from '../../lib/supabase';
 
 /* Small ornamental divider below headings */
 const OrnamentalDivider = () => (
@@ -84,17 +72,55 @@ const FrameCard = ({ img, heading, compact, index, link, objectPosition }) => (
 );
 
 const Food = () => {
+  const [frames, setFrames] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCuisines() {
+      const { data, error } = await supabase
+        .from('food_cuisines')
+        .select('*')
+        .order('display_order', { ascending: true });
+
+      if (!active) return;
+
+      if (error) {
+        console.error('Failed to load cuisines:', error.message);
+        setFrames([]);
+      } else {
+        setFrames(
+          (data || []).map((row) => ({
+            img: row.image_url,
+            heading: row.name,
+            compact: false,
+            link: `/food/${row.slug}`,
+          }))
+        );
+      }
+      setLoading(false);
+    }
+
+    loadCuisines();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <main className="w-full bg-white min-h-[60vh] flex flex-col">
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Food & Beverages' }]} />
       <div className="w-full flex flex-col pt-6 pb-12">
-        {frames.map((frame, index) => (
-          <FrameCard
-            key={frame.heading}
-            index={index}
-            {...frame}
-          />
-        ))}
+        {loading ? null : (
+          frames.map((frame, index) => (
+            <FrameCard
+              key={frame.heading}
+              index={index}
+              {...frame}
+            />
+          ))
+        )}
       </div>
     </main>
   );
