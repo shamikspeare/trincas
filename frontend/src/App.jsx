@@ -9,6 +9,7 @@ import Home from "./components/pages/Home";
 import Dining from "./components/pages/Dining";
 import Food from "./components/pages/Food";
 import Music from "./components/pages/Music";
+import MusicSchedule from "./components/pages/MusicSchedule"; // <-- Added this missing import
 import History from "./components/pages/History";
 import FoodSubPage from "./components/pages/FoodSubPage";
 import HistoryYearPage from "./components/pages/HistoryYearPage";
@@ -19,7 +20,6 @@ import Dashboard from "./admin/Dashboard";
 import AdminFood from "./admin/pages/FoodEditor";
 
 function App() {
-
   return (
     <Router>
       <ScrollToTop />
@@ -37,6 +37,7 @@ function App() {
             <Route path="/food-drinks" element={<FoodSubPage title="Drinks" basePath="/food-drinks" />} />
             <Route path="/food-cafe" element={<FoodSubPage title="Cafe" basePath="/food-cafe" />} />
             <Route path="/music" element={<Music />} />
+            <Route path="/music-schedule" element={<MusicSchedule />} />
             <Route path="/history" element={<History />} />
             <Route path="/history/:decade" element={<HistoryYearPage />} />
             <Route path="/press" element={<Press />} />
