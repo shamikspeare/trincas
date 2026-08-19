@@ -273,23 +273,21 @@ function CuisinePageEditor({ cuisine, notify }) {
   }
 
   async function handleMenuImageReplace(file) {
-    openCropModal(file, async (croppedFile) => {
-      setMenuBusy(true);
-      try {
-        const publicUrl = await uploadImage(croppedFile, "menu");
-        const { error } = await supabase
-          .from("food_pages")
-          .update({ menu_image_url: publicUrl })
-          .eq("slug", cuisine.slug);
-        if (error) throw error;
-        notify("success", "Menu image saved");
-        await load();
-      } catch (err) {
-        notify("error", err.message || "Failed to save menu image");
-      } finally {
-        setMenuBusy(false);
-      }
-    });
+    setMenuBusy(true);
+    try {
+      const publicUrl = await uploadImage(file, "menu");
+      const { error } = await supabase
+        .from("food_pages")
+        .update({ menu_image_url: publicUrl })
+        .eq("slug", cuisine.slug);
+      if (error) throw error;
+      notify("success", "Menu image saved");
+      await load();
+    } catch (err) {
+      notify("error", err.message || "Failed to save menu image");
+    } finally {
+      setMenuBusy(false);
+    }
   }
 
   async function handleMenuImageRemove() {
@@ -428,7 +426,7 @@ function CuisinePageEditor({ cuisine, notify }) {
         <p className="text-sm text-gray-400">Loading…</p>
       ) : (
         <div className="space-y-8">
-          {/* Menu image — saves immediately on upload/remove */}
+          {/* Menu image — saves immediately on upload/remove without cropping */}
           <section>
             <h4 className="text-sm font-semibold text-gray-900">Menu Image</h4>
             <p className="mt-0.5 text-xs text-gray-500">
@@ -443,16 +441,6 @@ function CuisinePageEditor({ cuisine, notify }) {
                 onRemove={handleMenuImageRemove}
               />
             </div>
-            <ImageCropperModal
-              open={cropModal.open}
-              file={cropModal.file}
-              aspect={1}
-              onCancel={() => setCropModal({ open: false, file: null, onCropped: null })}
-              onSave={(croppedFile) => {
-                cropModal.onCropped?.(croppedFile);
-                setCropModal({ open: false, file: null, onCropped: null });
-              }}
-            />
           </section>
 
           {/* Featured dishes */}
@@ -541,6 +529,17 @@ function CuisinePageEditor({ cuisine, notify }) {
                 );
               })}
             </div>
+
+            <ImageCropperModal
+              open={cropModal.open}
+              file={cropModal.file}
+              aspect={1}
+              onCancel={() => setCropModal({ open: false, file: null, onCropped: null })}
+              onSave={(croppedFile) => {
+                cropModal.onCropped?.(croppedFile);
+                setCropModal({ open: false, file: null, onCropped: null });
+              }}
+            />
           </section>
         </div>
       )}
