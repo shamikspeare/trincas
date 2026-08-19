@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import Breadcrumb from '../Breadcrumb';
 import Footer from '../Footer';
 
@@ -54,21 +53,20 @@ const MusicSchedule = () => {
                             whileHover={{ scale: 1.02, y: -4 }}
                             whileTap={{ scale: 0.96 }}
                         >
-                            <Link
-                                to={`/musicgrid${index + 1}`}
-                                aria-label={`View schedule details ${index + 1}`}
-                                className="block group overflow-hidden rounded-2xl transition-transform duration-300"
+                            <div
+                                aria-label={`Music schedule grid item ${index + 1}`}
+                                className="block overflow-hidden rounded-2xl transition-transform duration-300"
                             >
                                 <div className="w-full overflow-hidden bg-gray-50">
                                     <img
                                         src={src}
                                         alt={`Music schedule grid item ${index + 1}`}
-                                        className="w-full h-auto group-hover:scale-105 transition-transform duration-700 ease-out"
+                                        className="w-full h-auto transition-transform duration-700 ease-out"
                                         loading="lazy"
                                         decoding="async"
                                     />
                                 </div>
-                            </Link>
+                            </div>
                         </motion.div>
                     );
                 })}
