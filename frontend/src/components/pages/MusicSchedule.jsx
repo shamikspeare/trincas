@@ -1,0 +1,82 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import Breadcrumb from '../Breadcrumb';
+import Footer from '../Footer';
+
+import grid1 from '../../assets/musicgrid1.jpeg';
+import grid2 from '../../assets/musicgrid2.jpeg';
+import grid3 from '../../assets/musicgrid3.jpeg';
+import grid4 from '../../assets/musicgrid4.jpeg';
+import grid5 from '../../assets/musicgrid5.jpeg';
+import grid6 from '../../assets/musicgrid6.jpeg';
+
+const MusicSchedule = () => {
+    const staggeredImages = [grid1, grid2, grid3, grid4, grid5, grid6];
+
+    return (
+        <main className="w-full bg-white min-h-screen flex flex-col text-gray-900">
+            <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Music', link: '/music' }, { label: 'Schedule' }]} />
+
+            <div className="w-full flex justify-center pt-10 pb-2 px-4">
+                <h2
+                    style={{
+                        fontFamily: "'Cormorant Garamond', serif",
+                        fontSize: 'clamp(3rem, 6vw, 4.5rem)',
+                        fontWeight: 500,
+                        color: '#000000',
+                        letterSpacing: '0.04em',
+                        textAlign: 'center',
+                    }}
+                >
+                    Full Music Schedule
+                </h2>
+            </div>
+
+            {/* Increased Vertical Space: gap-16 (mobile) and gap-24 (desktop) */}
+            <div className="w-full max-w-xl mx-auto px-6 pt-10 pb-20 flex flex-col gap-16 sm:gap-24">
+                {staggeredImages.map((src, index) => {
+                    const isRight = index % 2 === 0;
+                    const alignClass = isRight ? 'self-end' : 'self-start';
+
+                    return (
+                        <motion.div
+                            key={index}
+                            className={`${alignClass} w-[75%] sm:w-[65%] bg-white rounded-2xl`}
+                            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+                            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                            viewport={{ once: true, margin: "-40px" }}
+                            transition={{
+                                delay: index * 0.1,
+                                duration: 0.5,
+                                ease: [0.22, 1, 0.36, 1],
+                            }}
+                            whileHover={{ scale: 1.02, y: -4 }}
+                            whileTap={{ scale: 0.96 }}
+                        >
+                            <Link
+                                to={`/musicgrid${index + 1}`}
+                                aria-label={`View schedule details ${index + 1}`}
+                                className="block group overflow-hidden rounded-2xl transition-transform duration-300"
+                            >
+                                <div className="w-full overflow-hidden bg-gray-50">
+                                    <img
+                                        src={src}
+                                        alt={`Music schedule grid item ${index + 1}`}
+                                        className="w-full h-auto group-hover:scale-105 transition-transform duration-700 ease-out"
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
+                                </div>
+                            </Link>
+                        </motion.div>
+                    );
+                })}
+            </div>
+
+            <Footer />
+        </main>
+    );
+};
+
+export default MusicSchedule;
