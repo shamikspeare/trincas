@@ -19,7 +19,7 @@ const MusicSchedule = () => {
 
             <div className="w-full flex justify-center pt-10 pb-2 px-4">
                 <h2
-                    className="text-center text-black font-medium tracking-[0.04em] text-[clamp(2.8rem,5.5vw,4.15rem)]"
+                    className="text-center text-black font-medium tracking-wide whitespace-nowrap text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
                     style={{ fontFamily: "'Cormorant Garamond', serif" }}
                 >
                     Full Music Schedule
