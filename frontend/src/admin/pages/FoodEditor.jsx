@@ -603,8 +603,8 @@ export default function FoodEditor() {
       <AnimatePresence>{toast ? <Toast toast={toast} /> : null}</AnimatePresence>
 
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Food & Beverages</h1>
-        <p className="mt-1 text-gray-500">
+        <h1 className="text-2xl font-semibold text-gray-900" style={{fontSize: '3em'}}>Food & Beverages</h1>
+        <p className="mt-1 text-gray-500" style={{fontSize: '3em'}}>
           Manage the /food landing page and each cuisine's page content.
         </p>
       </div>

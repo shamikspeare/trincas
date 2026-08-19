@@ -1,49 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import Breadcrumb from '../Breadcrumb';
+import { supabase } from '../../lib/supabase';
 
-import trincasImg from '../../assets/trincas-home.jpeg';
-import otherRoomImg from '../../assets/other room-home.jpeg';
-import mingImg from '../../assets/ming-home.jpeg';
-import tavernImg from '../../assets/tavern-home.jpeg';
 import mingHeaderImg from '../../assets/ming-header.png';
 import trincasLogoImg from '../../assets/logo.png';
 import tavernHeaderImg from '../../assets/tavern-header.png';
-
-const frames = [
-  {
-    img: trincasImg,
-    heading: 'Trincas',
-    titleImg: trincasLogoImg,
-    titleImgStyle: { height: 'clamp(3.5rem, 10vw, 5rem)' },
-    compact: false
-  },
-  {
-    img: otherRoomImg,
-    heading: 'THE OTHER ROOM',
-    headingStyle: {
-      fontFamily: "'Times New Roman', Times, serif",
-      fontSize: 'clamp(2rem, 5vw, 3rem)',
-      fontWeight: 'bold',
-      color: 'black'
-    },
-    compact: false
-  },
-  {
-    img: mingImg,
-    heading: 'Ming Room',
-    titleImg: mingHeaderImg,
-    titleImgStyle: { height: 'clamp(5rem, 16vw, 8rem)' },
-    compact: true
-  },
-  {
-    img: tavernImg,
-    heading: 'Tavern',
-    titleImg: tavernHeaderImg,
-    titleImgStyle: { height: 'clamp(3.5rem, 10vw, 5rem)' },
-    compact: true
-  },
-];
 
 /* Small ornamental divider below headings */
 const OrnamentalDivider = () => (
@@ -73,7 +36,47 @@ const cardVariants = {
   })
 };
 
-const FrameCard = ({ img, heading, headingStyle, titleImg, titleImgStyle, compact, index }) => (
+/* Maps a slug to its custom heading/logo metadata (kept local — transparent PNGs) */
+function getDiningMetadata(slug, name) {
+  switch (slug) {
+    case 'trincas':
+      return {
+        titleImg: trincasLogoImg,
+        titleImgStyle: { height: 'clamp(3.5rem, 10vw, 5rem)' },
+        compact: false
+      };
+    case 'the-other-room':
+      return {
+        heading: 'THE OTHER ROOM',
+        headingStyle: {
+          fontFamily: "'Times New Roman', Times, serif",
+          fontSize: 'clamp(2rem, 5vw, 3rem)',
+          fontWeight: 'bold',
+          color: 'black'
+        },
+        compact: false
+      };
+    case 'ming-room':
+      return {
+        titleImg: mingHeaderImg,
+        titleImgStyle: { height: 'clamp(5rem, 16vw, 8rem)' },
+        compact: true
+      };
+    case 'tavern':
+      return {
+        titleImg: tavernHeaderImg,
+        titleImgStyle: { height: 'clamp(3.5rem, 10vw, 5rem)' },
+        compact: true
+      };
+    default:
+      return {
+        heading: name,
+        compact: false
+      };
+  }
+}
+
+const FrameCard = ({ slug, image_url, name, headingStyle, titleImg, titleImgStyle, compact, index }) => (
   <motion.section
     className="w-full"
     custom={index}
@@ -81,11 +84,15 @@ const FrameCard = ({ img, heading, headingStyle, titleImg, titleImgStyle, compac
     animate="visible"
     variants={cardVariants}
   >
-    <div className="mx-auto flex flex-col items-center" style={{ maxWidth: 600, padding: index === 0 ? '1.5rem 1.25rem' : '0.25rem 1.25rem 1.5rem 1.25rem' }}>
+    <Link
+      to={`/dining/${slug}`}
+      className="mx-auto flex flex-col items-center"
+      style={{ maxWidth: 600, padding: index === 0 ? '1.5rem 1.25rem' : '0.25rem 1.25rem 1.5rem 1.25rem' }}
+    >
       <div className="w-full" style={{ maxWidth: compact ? 460 : 520 }}>
         <img
-          src={img}
-          alt={heading}
+          src={image_url}
+          alt={name}
           className="w-full object-cover rounded-2xl"
           style={{ aspectRatio: '16 / 10' }}
           loading="lazy"
@@ -96,7 +103,7 @@ const FrameCard = ({ img, heading, headingStyle, titleImg, titleImgStyle, compac
       {titleImg ? (
         <img
           src={titleImg}
-          alt={heading}
+          alt={name}
           className="mt-3 sm:mt-4 mx-auto object-contain relative"
           style={{
             zIndex: 0,
@@ -115,28 +122,79 @@ const FrameCard = ({ img, heading, headingStyle, titleImg, titleImgStyle, compac
             ...headingStyle
           }}
         >
-          {heading}
+          {name}
         </h2>
       )}
 
       <OrnamentalDivider />
-    </div>
+    </Link>
   </motion.section>
 );
 
 const Dining = () => {
+  const [diningSpaces, setDiningSpaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchDiningSpaces = async () => {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('dining')
+        .select('*')
+        .order('display_order', { ascending: true });
+
+      if (!isMounted) return;
+
+      if (fetchError) {
+        setError(fetchError.message);
+        setLoading(false);
+        return;
+      }
+
+      const merged = (data || []).map((row) => ({
+        ...row,
+        ...getDiningMetadata(row.slug, row.name)
+      }));
+
+      setDiningSpaces(merged);
+      setLoading(false);
+    };
+
+    fetchDiningSpaces();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <main className="w-full bg-white min-h-[60vh] flex flex-col">
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Dining Spaces' }]} />
-      <div className="w-full flex flex-col pt-6 pb-12">
-        {frames.map((frame, index) => (
-          <FrameCard
-            key={frame.heading}
-            index={index}
-            {...frame}
-          />
-        ))}
-      </div>
+
+      {loading && (
+        <div className="w-full flex justify-center items-center py-20 text-[#3D2B1F]">
+          Loading dining spaces...
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="w-full flex justify-center items-center py-20 text-red-600">
+          Unable to load dining spaces. Please try again later.
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div className="w-full flex flex-col pt-6 pb-12">
+          {diningSpaces.map((frame, index) => (
+            <FrameCard key={frame.id ?? frame.slug} index={index} {...frame} />
+          ))}
+        </div>
+      )}
     </main>
   );
 };

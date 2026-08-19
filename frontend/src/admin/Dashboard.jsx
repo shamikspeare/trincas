@@ -91,10 +91,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 px-10 py-8">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-semibold text-gray-900" style={{fontSize: '3em'}}>
           Welcome back, Admin 👋
         </h1>
-        <p className="mt-1 text-gray-500">
+        <p className="mt-1 text-gray-500" style={{fontSize: '3em'}}>
           Manage your website content and monitor performance.
         </p>
       </div>
@@ -139,40 +139,6 @@ export default function Dashboard() {
                   </span>
                 </Link>
               </motion.div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Analytics (stats only, no chart) */}
-      <section className="mt-10">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Analytics Overview
-          </h2>
-          <button className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm">
-            May 12 - May 18, 2025
-          </button>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div
-                key={stat.label}
-                className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50">
-                  <Icon className="h-4.5 w-4.5 text-indigo-600" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">{stat.label}</p>
-                  <p className="text-base font-semibold text-gray-900">
-                    {stat.value}
-                  </p>
-                </div>
-              </div>
             );
           })}
         </div>
