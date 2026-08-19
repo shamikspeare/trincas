@@ -170,7 +170,7 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
   }
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-black bg-white p-4 shadow-sm">
       <ImageSlot
         src={preview || cuisine.image_url}
         busy={busy}
@@ -199,8 +199,8 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
       />
 
       <div className="mt-3">
-        <p className="font-medium text-gray-900">{cuisine.name}</p>
-        <p className="text-xs text-gray-500">/food-{cuisine.slug}</p>
+        <p className="text-2xl font-semibold text-gray-900 sm:text-3xl">{cuisine.name}</p>
+        <p className="text-sm text-gray-500 sm:text-base">/food-{cuisine.slug}</p>
       </div>
 
       <button
@@ -217,7 +217,7 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
 
 /* =========================================================
    Section 2 — Per-cuisine page editor
-   Menu image (food_pages) + featured dishes (food_dishes).
+   Menu images (food_pages) + featured dishes (food_dishes).
    Loads its own data on mount; every mutation writes straight
    to Supabase and then re-fetches.
    ========================================================= */
@@ -238,8 +238,7 @@ function CuisinePageEditor({ cuisine, notify }) {
     setLoading(true);
     setLoadError(null);
     try {
-      // Ensure a food_pages row exists for this cuisine (requirement 10),
-      // without touching menu_image_url if it already exists.
+      // Ensure a food_pages row exists for this cuisine (requirement 10)
       const { data: pageRow, error: pageError } = await supabase
         .from("food_pages")
         .upsert({ slug: cuisine.slug }, { onConflict: "slug" })
@@ -272,35 +271,67 @@ function CuisinePageEditor({ cuisine, notify }) {
     setCropModal({ open: true, file, onCropped });
   }
 
-  async function handleMenuImageReplace(file) {
+  // Handle adding a new menu page image
+  async function handleMenuImageAdd(file) {
     setMenuBusy(true);
     try {
       const publicUrl = await uploadImage(file, "menu");
+      const currentImages = page.menu_images || [];
+      const newImages = [...currentImages, publicUrl];
+      
       const { error } = await supabase
         .from("food_pages")
-        .update({ menu_image_url: publicUrl })
+        .update({ menu_images: newImages })
         .eq("slug", cuisine.slug);
+        
       if (error) throw error;
-      notify("success", "Menu image saved");
+      notify("success", "Menu page added");
       await load();
     } catch (err) {
-      notify("error", err.message || "Failed to save menu image");
+      notify("error", err.message || "Failed to add menu page");
     } finally {
       setMenuBusy(false);
     }
   }
 
-  async function handleMenuImageRemove() {
+  // Handle replacing an existing menu page image at a specific index
+  async function handleMenuImageReplace(file, index) {
     setMenuBusy(true);
     try {
+      const publicUrl = await uploadImage(file, "menu");
+      const newImages = [...(page.menu_images || [])];
+      newImages[index] = publicUrl;
+
       const { error } = await supabase
         .from("food_pages")
-        .update({ menu_image_url: null })
+        .update({ menu_images: newImages })
         .eq("slug", cuisine.slug);
+        
       if (error) throw error;
+      notify("success", "Menu page updated");
       await load();
     } catch (err) {
-      notify("error", err.message || "Failed to remove menu image");
+      notify("error", err.message || "Failed to update menu page");
+    } finally {
+      setMenuBusy(false);
+    }
+  }
+
+  // Handle removing a menu page image at a specific index
+  async function handleMenuImageRemove(index) {
+    setMenuBusy(true);
+    try {
+      const newImages = (page.menu_images || []).filter((_, i) => i !== index);
+      const { error } = await supabase
+        .from("food_pages")
+        .update({ menu_images: newImages })
+        .eq("slug", cuisine.slug);
+        
+      if (error) throw error;
+      notify("success", "Menu page removed");
+      await load();
+    } catch (err) {
+      notify("error", err.message || "Failed to remove menu page");
     } finally {
       setMenuBusy(false);
     }
@@ -405,11 +436,11 @@ function CuisinePageEditor({ cuisine, notify }) {
   }
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-black bg-white p-6 shadow-sm">
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">{cuisine.name}</h3>
-          <p className="text-xs text-gray-500">/food-{cuisine.slug}</p>
+          <h3 className="text-2xl font-semibold text-gray-900 sm:text-3xl">{cuisine.name}</h3>
+          <p className="text-sm text-gray-500 sm:text-base">/food-{cuisine.slug}</p>
         </div>
         {loading ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" /> : null}
       </div>
@@ -426,20 +457,33 @@ function CuisinePageEditor({ cuisine, notify }) {
         <p className="text-sm text-gray-400">Loading…</p>
       ) : (
         <div className="space-y-8">
-          {/* Menu image — saves immediately on upload/remove without cropping */}
+          {/* Menu images array — saves immediately on add/upload/remove without cropping */}
           <section>
-            <h4 className="text-sm font-semibold text-gray-900">Menu Image</h4>
-            <p className="mt-0.5 text-xs text-gray-500">
-              Full menu shown at the top of the {cuisine.name} page.
+            <h4 className="text-xl font-semibold text-gray-900 sm:text-2xl">Menu Images</h4>
+            <p className="mt-0.5 text-sm text-gray-500 sm:text-base">
+              Full menu pages shown at the top of the {cuisine.name} page. You can add multiple pages.
             </p>
-            <div className="mt-3 max-w-md">
-              <ImageSlot
-                src={page?.menu_image_url}
-                busy={menuBusy}
-                label="Upload menu image"
-                onReplace={handleMenuImageReplace}
-                onRemove={handleMenuImageRemove}
-              />
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {(page?.menu_images || []).map((url, index) => (
+                <div key={index} className="relative">
+                  <ImageSlot
+                    src={url}
+                    busy={menuBusy}
+                    label={`Menu Page ${index + 1}`}
+                    onReplace={(file) => handleMenuImageReplace(file, index)}
+                    onRemove={() => handleMenuImageRemove(index)}
+                  />
+                </div>
+              ))}
+              {/* Slot to append a new menu page */}
+              <div className="relative">
+                <ImageSlot
+                  src={null}
+                  busy={menuBusy}
+                  label="Add menu page"
+                  onReplace={handleMenuImageAdd}
+                />
+              </div>
             </div>
           </section>
 
@@ -447,8 +491,8 @@ function CuisinePageEditor({ cuisine, notify }) {
           <section>
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-semibold text-gray-900">Dishes</h4>
-                <p className="mt-0.5 text-xs text-gray-500">
+                <h4 className="text-xl font-semibold text-gray-900 sm:text-2xl">Dishes</h4>
+                <p className="mt-0.5 text-sm text-gray-500 sm:text-base">
                   Drag to reorder — order saves automatically.
                   {reordering ? " Saving order…" : ""}
                 </p>
@@ -456,9 +500,9 @@ function CuisinePageEditor({ cuisine, notify }) {
               <button
                 onClick={addDish}
                 disabled={savingDishes}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg border border-green-700 bg-green-100 px-6 py-3 text-base font-semibold text-green-900 hover:bg-green-200 disabled:opacity-50"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-5 w-5" />
                 Add Dish
               </button>
             </div>
@@ -475,7 +519,7 @@ function CuisinePageEditor({ cuisine, notify }) {
                     onDragStart={() => setDragIndex(index)}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => handleDishDrop(index)}
-                    className="rounded-xl border border-gray-100 p-3"
+                    className="rounded-xl border border-black p-3"
                   >
                     <div className="flex items-center justify-between text-gray-300">
                       <GripVertical className="h-4 w-4 cursor-grab" />
@@ -602,8 +646,8 @@ export default function FoodEditor() {
       <AnimatePresence>{toast ? <Toast toast={toast} /> : null}</AnimatePresence>
 
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900" style={{fontSize: '3em'}}>Food & Beverages</h1>
-        <p className="mt-1 text-gray-500" style={{fontSize: '3em'}}>
+        <h1 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Food & Beverages</h1>
+        <p className="mt-1 text-base text-gray-500 sm:text-lg">
           Manage the /food landing page and each cuisine's page content.
         </p>
       </div>
@@ -645,8 +689,8 @@ export default function FoodEditor() {
       {/* Section 2 — Per-cuisine page editors */}
       {!loading && !loadError ? (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-gray-900">Cuisine Pages</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Cuisine Pages</h2>
+          <p className="mt-1 text-lg text-gray-500 sm:text-xl">
             Manage the menu image and featured dishes for each cuisine page.
           </p>
 

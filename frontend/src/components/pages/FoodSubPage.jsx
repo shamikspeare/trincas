@@ -107,7 +107,7 @@ async function fetchFoodPageData(slug) {
   const [{ data: page, error: pageError }, { data: dishes, error: dishesError }] = await Promise.all([
     supabase
       .from('food_pages')
-      .select('id, slug, menu_image_url')
+      .select('id, slug, menu_images') // Changed to fetch the menu_images array
       .eq('slug', slug)
       .maybeSingle(),
     supabase
@@ -199,7 +199,10 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
   if (loading) return <PageLoading title={displayTitle} />;
   if (error) return <PageError title={displayTitle} onRetry={load} />;
 
-  const menuImage = page?.menu_image_url || null;
+  // Safely extract the image array
+  const menuImages = page?.menu_images || [];
+  const hasImages = menuImages.length > 0;
+  const coverImage = hasImages ? menuImages[0] : null;
 
   return (
     <main className="min-h-[60vh] bg-white">
@@ -217,25 +220,25 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
         initial="hidden"
         animate="visible"
       >
-        {/* Menu image */}
+        {/* Menu preview block */}
         <motion.section variants={cardVariants} className="mt-2 w-full">
-          {menuImage ? (
+          {hasImages ? (
             <button
               type="button"
               onClick={openModal}
-              className="group relative block w-full text-left"
+              className="group relative block w-full text-left overflow-hidden rounded-lg"
               aria-label={`Expand ${displayTitle} menu`}
             >
               <img
-                src={menuImage}
-                alt={`${displayTitle} menu`}
+                src={coverImage}
+                alt={`${displayTitle} menu cover`}
                 className="h-auto w-full object-cover"
                 loading="eager"
                 decoding="async"
               />
 
               <span className="absolute inset-0 flex items-center justify-center">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/40 px-4 py-2 text-sm font-bold text-black shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-transform group-active:scale-95">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/40 px-5 py-2.5 text-sm font-bold text-black shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-transform group-active:scale-95">
                   <Expand className="h-4 w-4" />
                   <span>Expand</span>
                 </span>
@@ -269,38 +272,48 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
         </motion.section>
       </motion.div>
 
+      {/* Fullscreen multiple-image modal */}
       <AnimatePresence>
-        {selectedMenuOpen && menuImage ? (
+        {selectedMenuOpen && hasImages ? (
           <div
-            className={`fixed inset-0 z-50 flex flex-col justify-between items-center pt-[74px] pb-6 px-4 bg-black/60 backdrop-blur-md transition-opacity duration-300 ${
+            className={`fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md transition-opacity duration-300 ${
               isAnimating ? 'opacity-100' : 'opacity-0'
             }`}
-            onClick={closeModal}
           >
-            <div className="w-full flex justify-start">
+            {/* Close Button Header */}
+            <div className="absolute top-0 left-0 right-0 z-10 flex justify-start p-4 pt-[74px]">
               <button
                 type="button"
                 onClick={closeModal}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-white shadow-md active:scale-95 transition"
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 shadow-md active:scale-95 transition"
                 aria-label="Close"
               >
-                <X className="w-4 h-4 text-black" />
+                <X className="w-5 h-5 text-white" />
               </button>
             </div>
 
+            {/* Scrollable Container */}
             <div
-              className="flex flex-col items-center justify-center my-auto"
-              onClick={(e) => e.stopPropagation()}
+              className="flex-1 overflow-y-auto w-full pt-[120px] pb-10 px-4 flex flex-col items-center"
+              onClick={closeModal}
             >
-              <img
-                src={menuImage}
-                alt={`${displayTitle} menu expanded`}
-                loading="eager"
-                decoding="async"
-                className={`max-w-[95vw] max-h-[85vh] w-auto h-auto object-contain transition-all duration-300 ${
-                  isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+              <div
+                className={`flex flex-col items-center justify-start gap-8 w-full max-w-5xl transition-all duration-300 ${
+                  isAnimating ? 'opacity-100 scale-100 y-0' : 'opacity-0 scale-95 translate-y-4'
                 }`}
-              />
+                onClick={(e) => e.stopPropagation()}
+              >
+                {menuImages.map((src, index) => (
+                  <img
+                    key={index}
+                    src={src}
+                    alt={`${displayTitle} menu expanded page ${index + 1}`}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    className="w-full h-auto object-contain rounded shadow-2xl"
+                  />
+                ))}
+              </div>
             </div>
           </div>
         ) : null}
