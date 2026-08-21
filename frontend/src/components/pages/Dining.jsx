@@ -93,7 +93,7 @@ const FrameCard = ({ slug, image_url, name, headingStyle, titleImg, titleImgStyl
         <img
           src={image_url}
           alt={name}
-          className="w-full object-cover rounded-2xl"
+          className="w-full rounded-2xl border border-gray-400/35 shadow-[0_2px_8px_rgba(0,0,0,0.06)] object-cover"
           style={{ aspectRatio: '16 / 10' }}
           loading="lazy"
           decoding="async"
