@@ -28,7 +28,7 @@ function AppLayout() {
   return (
     <div
       className={`min-h-screen bg-white text-gray-900 flex flex-col ${
-        isAdminRoute ? "pt-5" : ""
+        isAdminRoute ? "admin-font pt-5" : ""
       }`}
     >
       {!isAdminRoute && <Navbar />}

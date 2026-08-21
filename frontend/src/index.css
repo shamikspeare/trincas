@@ -14,3 +14,8 @@ body,
 body {
   margin: 0;
 }
+
+.admin-font,
+.admin-font * {
+  font-family: Arial, Helvetica, sans-serif !important;
+}

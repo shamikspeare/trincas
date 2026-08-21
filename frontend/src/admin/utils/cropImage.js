@@ -1,50 +1,42 @@
-export async function getCroppedImg(imageSrc, pixelCrop, maxSize = 1200) {
-  if (!imageSrc || !pixelCrop) {
-    throw new Error("No crop data available.");
+export async function getCroppedImg(image, crop, targetWidth = 1200) {
+  if (!image || !crop || !crop.width || !crop.height) {
+    throw new Error("Invalid crop area");
   }
 
-  const image = new Image();
-  image.src = imageSrc;
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
 
-  await new Promise((resolve, reject) => {
-    image.onload = resolve;
-    image.onerror = () => reject(new Error("Could not load image for cropping."));
-  });
+  const cropWidthNatural = crop.width * scaleX;
+  const cropHeightNatural = crop.height * scaleY;
 
-  const cropWidth = Math.max(1, Math.floor(pixelCrop.width));
-  const cropHeight = Math.max(1, Math.floor(pixelCrop.height));
-  const outputWidth = Math.min(cropWidth, maxSize);
-  const outputHeight = Math.min(cropHeight, maxSize);
+  const outputWidth = Math.min(targetWidth, cropWidthNatural);
+  const outputHeight = outputWidth * (cropHeightNatural / cropWidthNatural);
 
   const canvas = document.createElement("canvas");
-  canvas.width = outputWidth;
-  canvas.height = outputHeight;
+  canvas.width = Math.round(outputWidth);
+  canvas.height = Math.round(outputHeight);
 
-  const context = canvas.getContext("2d");
-  if (!context) {
-    throw new Error("Your browser does not support canvas cropping.");
-  }
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not get canvas context");
 
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
-
-  context.drawImage(
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(
     image,
-    Math.max(0, pixelCrop.x),
-    Math.max(0, pixelCrop.y),
-    cropWidth,
-    cropHeight,
+    crop.x * scaleX,
+    crop.y * scaleY,
+    cropWidthNatural,
+    cropHeightNatural,
     0,
     0,
-    outputWidth,
-    outputHeight
+    canvas.width,
+    canvas.height
   );
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          reject(new Error("Could not generate cropped image."));
+          reject(new Error("Canvas is empty"));
           return;
         }
         resolve(blob);
@@ -54,5 +46,3 @@ export async function getCroppedImg(imageSrc, pixelCrop, maxSize = 1200) {
     );
   });
 }
-
-export default getCroppedImg;

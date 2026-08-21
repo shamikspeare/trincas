@@ -74,7 +74,7 @@ const Press = () => {
 
       <div className="col-start-1 row-start-1 w-full pb-6 pt-10">
         {/* Header */}
-        <div className="max-w-7xl mx-auto mt-[10px] mb-8 text-center">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 mt-[10px] mb-8 text-center">
           <h1 className="text-3xl font-serif tracking-wide text-gray-900">
             PRESS
           </h1>
@@ -82,12 +82,12 @@ const Press = () => {
 Documenting our work and milestones as published across global outlets.</p>
         </div>
 
-        {/* Gallery – 2 columns, 1px gap */}
-        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-px">
+        {/* Gallery – 2 columns, wider gap, smaller cards, slight shadow */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-2 gap-6">
           {pressImages.map((src, index) => (
             <div
               key={index}
-              className="relative overflow-hidden rounded-md aspect-[3/4] cursor-pointer bg-gray-100"
+              className="relative overflow-hidden rounded-2xl aspect-[3/4] cursor-pointer bg-gray-100 shadow-sm"
               onClick={() => openModal(index)}
             >
               <img

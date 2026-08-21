@@ -1,6 +1,6 @@
 // src/admin/pages/DiningEditor.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
 import {
   Plus,
   Trash2,
@@ -12,8 +12,17 @@ import {
   AlertCircle,
   Loader2,
   RefreshCw,
+  Pencil,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { compressImage } from "../utils/imageCompressor";
+import {
+  fetchPageSections,
+  updateSection,
+  deleteSection,
+  reorderSections,
+} from "../utils/diningSections";
+import ImageCropperModal from "../components/ImageCropperModal";
 
 const BUCKET = "dining";
 
@@ -30,13 +39,15 @@ function tempId() {
 }
 
 // Uploads to Storage under public/<room-slug>/ and returns the public URL.
-// Never returns nothing, never stores base64.
 async function uploadImage(file, roomSlug) {
-  const ext = file.name.split(".").pop();
+  const compressedFile = await compressImage(file);
+  const ext = compressedFile.name?.includes(".")
+    ? compressedFile.name.split(".").pop()
+    : compressedFile.type.split("/").pop();
   const path = `public/${roomSlug}/${tempId()}.${ext}`;
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(path, file, { upsert: true, cacheControl: "3600" });
+    .upload(path, compressedFile, { upsert: true, cacheControl: "3600" });
   if (uploadError) throw uploadError;
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
@@ -121,7 +132,6 @@ function ImageSlot({ src, onReplace, onRemove, busy, ratio = "aspect-[16/10]", l
 
 /* =========================================================
    Section 1 — Dining Thumbnail Images
-   Only ever touches: supabase.from("dining")
    ========================================================= */
 function DiningThumbnailCard({ room, notify, onSaved }) {
   const [preview, setPreview] = useState(null);
@@ -188,72 +198,219 @@ function DiningThumbnailCard({ room, notify, onSaved }) {
 }
 
 /* =========================================================
-   Carousel card — one row in dining_cards.
-   Only room_slug / image_url / display_order / created_at.
+   Text Section Editor (inline, appears at top when creating)
    ========================================================= */
-function CarouselCard({ card, index, roomSlug, onDragStart, onDrop, notify, onChanged }) {
-  const [busy, setBusy] = useState(false);
+function TextSectionEditor({ section, onSave, onCancel, busy }) {
+  const [heading, setHeading] = useState(section.heading || "");
+  const [body, setBody] = useState(section.body || "");
+  const textareaRef = useRef(null);
 
-  async function handleUpload(file) {
-    setBusy(true);
-    try {
-      const publicUrl = await uploadImage(file, roomSlug);
-      const { error } = await supabase
-        .from("dining_cards")
-        .update({ image_url: publicUrl })
-        .eq("id", card.id);
-      if (error) throw error;
-      notify("success", "Image saved");
-      await onChanged();
-    } catch (err) {
-      notify("error", err.message || "Failed to save image");
-    } finally {
-      setBusy(false);
+  useEffect(() => {
+    // Focus the textarea when the component mounts
+    if (textareaRef.current) {
+      textareaRef.current.focus();
     }
-  }
+  }, []);
 
-  async function handleDelete() {
-    setBusy(true);
-    try {
-      const { error } = await supabase.from("dining_cards").delete().eq("id", card.id);
-      if (error) throw error;
-      notify("success", "Image deleted");
-      await onChanged();
-    } catch (err) {
-      notify("error", err.message || "Failed to delete image");
-    } finally {
-      setBusy(false);
-    }
-  }
+  useEffect(() => {
+    // Update local state if the section prop changes (e.g., editing a different section)
+    setHeading(section.heading || "");
+    setBody(section.body || "");
+  }, [section]);
+
+  const dirty = heading !== (section.heading || "") || body !== (section.body || "");
 
   return (
-    <div
-      draggable
-      onDragStart={() => onDragStart(index)}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={() => onDrop(index)}
-      className="rounded-xl border border-gray-100 p-3"
-    >
-      <div className="flex items-center text-gray-300">
-        <GripVertical className="h-4 w-4 cursor-grab" />
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium uppercase tracking-wide text-indigo-600">
+          {String(section.id).startsWith("tmp_") ? "New Text Section" : "Edit Text Section"}
+        </span>
+        <button
+          onClick={onCancel}
+          className="text-xs text-gray-500 hover:text-gray-700"
+          disabled={busy}
+        >
+          Cancel
+        </button>
       </div>
-      <div className="mt-2">
-        <ImageSlot
-          src={card.image_url}
-          ratio="aspect-square"
-          busy={busy}
-          label="Carousel image"
-          onReplace={handleUpload}
-          onRemove={handleDelete}
-        />
+
+      <input
+        value={heading}
+        onChange={(e) => setHeading(e.target.value)}
+        placeholder="Heading (optional)"
+        className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium focus:border-indigo-400 focus:outline-none"
+      />
+      <textarea
+        ref={textareaRef}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={5}
+        placeholder="Body text…"
+        className="mt-2 w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+      />
+
+      <div className="mt-3 flex items-center justify-end">
+        <button
+          onClick={() => onSave({ heading, body })}
+          disabled={busy || !dirty}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          Save
+        </button>
       </div>
     </div>
   );
 }
 
 /* =========================================================
+   Preview Cards (compact, left-aligned, with border)
+   ========================================================= */
+function TextPreviewCard({ section, onEdit, onDelete, busy }) {
+  return (
+    <div className="group relative rounded-lg border border-gray-200 bg-gray-200 p-3 max-w-2xl">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          {section.heading && (
+            <h4 className="text-sm font-semibold text-gray-900 truncate">{section.heading}</h4>
+          )}
+          <p className="text-sm text-gray-700 line-clamp-4 overflow-hidden">
+            {section.body || ""}
+          </p>
+        </div>
+        <div className="ml-3 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={onEdit}
+            className="mb-1 p-1 text-gray-500 hover:text-indigo-600"
+            title="Edit"
+            disabled={busy}
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-1 text-gray-500 hover:text-rose-600"
+            title="Delete"
+            disabled={busy}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ImagePreviewCard({ section, onReplace, onDelete, busy }) {
+  return (
+    <div className="group relative rounded-lg border border-gray-200 bg-white p-3 max-w-2xl">
+      <div className="flex items-start gap-3">
+        <div className="w-24 h-24 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+          {section.image_url ? (
+            <img
+              src={section.image_url}
+              alt={section.alt_text || ""}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <ImagePlus className="h-5 w-5" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          {section.alt_text && (
+            <p className="text-sm text-gray-700 truncate">{section.alt_text}</p>
+          )}
+          <p className="text-xs text-gray-500 mt-1">Image</p>
+        </div>
+        <div className="ml-3 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={onReplace}
+            className="mb-1 p-1 text-gray-500 hover:text-indigo-600"
+            title="Replace image"
+            disabled={busy}
+          >
+            <ImagePlus className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-1 text-gray-500 hover:text-rose-600"
+            title="Delete section"
+            disabled={busy}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   Section Reorder Item (with drag controls)
+   ========================================================= */
+function SectionReorderItem({
+  section,
+  isEditing,
+  onStartDrag,
+  onEdit,
+  onDelete,
+  onReplace,
+  onSaveText,
+  onCancelEdit,
+  busyText,
+  busyImage,
+}) {
+  const dragControls = useDragControls();
+  return (
+    <Reorder.Item
+      value={section}
+      dragListener={false}
+      dragControls={dragControls}
+      onDragEnd={onStartDrag}
+      className="list-none"
+      whileDrag={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
+    >
+      <div className="flex items-start gap-2">
+        <GripVertical
+          className="h-5 w-5 mt-1 cursor-grab touch-none active:cursor-grabbing text-gray-300"
+          onPointerDown={(e) => dragControls.start(e)}
+        />
+        <div className="flex-1">
+          {section.section_type === "text" ? (
+            isEditing ? (
+              <TextSectionEditor
+                section={section}
+                onSave={(content) => onSaveText(section, content)}
+                onCancel={onCancelEdit}
+                busy={busyText}
+              />
+            ) : (
+              <TextPreviewCard
+                section={section}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                busy={busyText}
+              />
+            )
+          ) : (
+            <ImagePreviewCard
+              section={section}
+              onReplace={onReplace}
+              onDelete={onDelete}
+              busy={busyImage}
+            />
+          )}
+        </div>
+      </div>
+    </Reorder.Item>
+  );
+}
+
+/* =========================================================
    Section 2 — Per-room collapsible editor
-   Carousel (dining_cards) + Description (dining_pages_texts)
    ========================================================= */
 function RoomEditorSection({ room, notify }) {
   const [open, setOpen] = useState(false);
@@ -261,36 +418,24 @@ function RoomEditorSection({ room, notify }) {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
 
-  const [cards, setCards] = useState([]);
-  const [dragIndex, setDragIndex] = useState(null);
+  const [sections, setSections] = useState([]);
   const [reordering, setReordering] = useState(false);
-  const [addingCard, setAddingCard] = useState(false);
+  const [draftText, setDraftText] = useState(null); // temp section for new text
+  const [editingTextId, setEditingTextId] = useState(null); // existing section id being edited
+  const [textBusy, setTextBusy] = useState(false);
 
-  const [description, setDescription] = useState("");
-  const [savedDescription, setSavedDescription] = useState("");
-  const [descBusy, setDescBusy] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [cropFile, setCropFile] = useState(null);
+  const [imageEditTarget, setImageEditTarget] = useState(null); // section id or null for new
+  const [imageBusy, setImageBusy] = useState(false);
+  const hiddenFileInputRef = useRef(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const { data: cardRows, error: cardError } = await supabase
-        .from("dining_cards")
-        .select("*")
-        .eq("room_slug", room.slug)
-        .order("display_order", { ascending: true });
-      if (cardError) throw cardError;
-
-      const { data: textRow, error: textError } = await supabase
-        .from("dining_pages_texts")
-        .select("*")
-        .eq("room_slug", room.slug)
-        .maybeSingle();
-      if (textError) throw textError;
-
-      setCards(cardRows || []);
-      setDescription(textRow?.description || "");
-      setSavedDescription(textRow?.description || "");
+      const rows = await fetchPageSections(room.slug);
+      setSections(rows);
       setLoaded(true);
     } catch (err) {
       setLoadError(err.message || `Failed to load ${room.name}`);
@@ -304,46 +449,168 @@ function RoomEditorSection({ room, notify }) {
     if (!loaded) load();
   }
 
-  async function addCard() {
-    setAddingCard(true);
+  // ---- Text Section Handlers ----
+
+  const handleAddText = () => {
+    setDraftText({
+      id: `tmp_${Date.now()}`,
+      section_type: "text",
+      heading: "",
+      body: "",
+    });
+    setEditingTextId(null);
+  };
+
+  const handleEditText = (section) => {
+    setEditingTextId(section.id);
+    setDraftText(null);
+  };
+
+  const handleTextCancel = () => {
+    setDraftText(null);
+    setEditingTextId(null);
+  };
+
+  const handleTextSave = async (section, { heading, body }) => {
+    setTextBusy(true);
     try {
-      const { error } = await supabase.from("dining_cards").insert([
-        {
-          room_slug: room.slug,
-          image_url: null,
-          display_order: cards.length,
-        },
-      ]);
-      if (error) throw error;
+      if (String(section.id).startsWith("tmp_")) {
+        const { data: existing, error: fetchError } = await supabase
+          .from("dining_page_sections")
+          .select("id")
+          .eq("page_slug", room.slug)
+          .order("display_order", { ascending: true });
+        if (fetchError) throw fetchError;
+
+        const updates = (existing || []).map((row, idx) =>
+          supabase
+            .from("dining_page_sections")
+            .update({ display_order: idx + 1 })
+            .eq("id", row.id)
+        );
+        const insert = supabase.from("dining_page_sections").insert([
+          {
+            page_slug: room.slug,
+            section_type: "text",
+            display_order: 0,
+            heading,
+            body,
+            image_url: null,
+            alt_text: null,
+          },
+        ]);
+        const results = await Promise.all([insert, ...updates]);
+        const failed = results.find((r) => r.error);
+        if (failed) throw failed.error;
+      } else {
+        await updateSection(section.id, { heading, body });
+      }
+      notify("success", "Text section saved");
+      await load();
+      setDraftText(null);
+      setEditingTextId(null);
+    } catch (err) {
+      notify("error", err.message || "Failed to save text section");
+    } finally {
+      setTextBusy(false);
+    }
+  };
+
+  const handleDeleteText = async (sectionId) => {
+    setTextBusy(true);
+    try {
+      await deleteSection(sectionId);
+      notify("success", "Text section deleted");
       await load();
     } catch (err) {
-      notify("error", err.message || "Failed to add card");
+      notify("error", err.message || "Failed to delete text section");
     } finally {
-      setAddingCard(false);
+      setTextBusy(false);
     }
+  };
+
+  // ---- Image Section Handlers ----
+
+  const handleAddImageClick = () => {
+    setImageEditTarget(null);
+    hiddenFileInputRef.current?.click();
+  };
+
+  const handleReplaceImageClick = (sectionId) => {
+    setImageEditTarget(sectionId);
+    hiddenFileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCropFile(file);
+      setImageModalOpen(true);
+    }
+    e.target.value = "";
+  };
+
+  const handleCroppedImage = async (croppedFile) => {
+    setImageBusy(true);
+    try {
+      const publicUrl = await uploadImage(croppedFile, room.slug);
+      if (imageEditTarget) {
+        await updateSection(imageEditTarget, { image_url: publicUrl });
+        notify("success", "Image updated");
+      } else {
+        const { data: existing, error: fetchError } = await supabase
+          .from("dining_page_sections")
+          .select("id")
+          .eq("page_slug", room.slug)
+          .order("display_order", { ascending: true });
+        if (fetchError) throw fetchError;
+
+        const newOrder = (existing?.length || 0);
+        const { error: insertError } = await supabase.from("dining_page_sections").insert([
+          {
+            page_slug: room.slug,
+            section_type: "image",
+            display_order: newOrder,
+            image_url: publicUrl,
+            alt_text: "",
+          },
+        ]);
+        if (insertError) throw insertError;
+        notify("success", "Image section added");
+      }
+      await load();
+      setImageModalOpen(false);
+      setCropFile(null);
+    } catch (err) {
+      notify("error", err.message || "Failed to save image");
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
+  const handleDeleteImage = async (sectionId) => {
+    setImageBusy(true);
+    try {
+      await deleteSection(sectionId);
+      notify("success", "Image section deleted");
+      await load();
+    } catch (err) {
+      notify("error", err.message || "Failed to delete image section");
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
+  // ---- Reorder ----
+
+  function handleReorderChange(newOrder) {
+    setSections(newOrder);
   }
 
-  async function handleCardDrop(dropIndex) {
-    if (dragIndex === null || dragIndex === dropIndex) {
-      setDragIndex(null);
-      return;
-    }
-
-    const reordered = [...cards];
-    const [moved] = reordered.splice(dragIndex, 1);
-    reordered.splice(dropIndex, 0, moved);
-    setDragIndex(null);
-    setCards(reordered); // optimistic
-
+  async function handleDragEnd() {
     setReordering(true);
     try {
-      const updates = reordered.map((card, i) =>
-        supabase.from("dining_cards").update({ display_order: i }).eq("id", card.id)
-      );
-      const results = await Promise.all(updates);
-      const failed = results.find((r) => r.error);
-      if (failed) throw failed.error;
-      await load();
+      await reorderSections(room.slug, sections.map((s) => s.id));
     } catch (err) {
       notify("error", err.message || "Failed to save new order");
       await load();
@@ -351,44 +618,6 @@ function RoomEditorSection({ room, notify }) {
       setReordering(false);
     }
   }
-
-  async function saveDescription() {
-    setDescBusy(true);
-    try {
-      const { data: existing, error: findError } = await supabase
-        .from("dining_pages_texts")
-        .select("id")
-        .eq("room_slug", room.slug)
-        .maybeSingle();
-      if (findError) throw findError;
-
-      if (existing) {
-        const { error } = await supabase
-          .from("dining_pages_texts")
-          .update({ description, updated_at: new Date().toISOString() })
-          .eq("room_slug", room.slug);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("dining_pages_texts").insert([
-          {
-            room_slug: room.slug,
-            description,
-            updated_at: new Date().toISOString(),
-          },
-        ]);
-        if (error) throw error;
-      }
-
-      setSavedDescription(description);
-      notify("success", `${room.name} description saved`);
-    } catch (err) {
-      notify("error", err.message || "Failed to save description");
-    } finally {
-      setDescBusy(false);
-    }
-  }
-
-  const hasUnsavedDescription = description !== savedDescription;
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -421,75 +650,100 @@ function RoomEditorSection({ room, notify }) {
               ) : loading ? (
                 <p className="text-sm text-gray-400">Loading…</p>
               ) : (
-                <div className="space-y-8">
-                  {/* Carousel */}
-                  <section>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">
-                          Carousel Images
-                        </h4>
-                        <p className="mt-0.5 text-xs text-gray-500">
-                          Drag to reorder — order saves automatically.
-                          {reordering ? " Saving order…" : ""}
-                        </p>
-                      </div>
+                <section>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">
+                        Page Sections
+                      </h4>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        Drag to reorder — order saves automatically.
+                        {reordering ? " Saving order…" : ""}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
                       <button
-                        onClick={addCard}
-                        disabled={addingCard}
+                        onClick={handleAddText}
+                        disabled={textBusy || imageBusy}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                       >
-                        {addingCard ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Plus className="h-3.5 w-3.5" />
-                        )}
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Text
+                      </button>
+                      <button
+                        onClick={handleAddImageClick}
+                        disabled={textBusy || imageBusy}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <ImagePlus className="h-3.5 w-3.5" />
                         Add Image
                       </button>
                     </div>
+                  </div>
 
-                    {cards.length === 0 ? (
-                      <p className="mt-4 text-sm text-gray-400">No carousel images yet.</p>
-                    ) : (
-                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {cards.map((card, index) => (
-                          <CarouselCard
-                            key={card.id}
-                            card={card}
-                            index={index}
-                            roomSlug={room.slug}
-                            onDragStart={setDragIndex}
-                            onDrop={handleCardDrop}
-                            notify={notify}
-                            onChanged={load}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </section>
+                  {/* Hidden file input for image selection */}
+                  <input
+                    ref={hiddenFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
 
-                  {/* Description */}
-                  <section className="border-t border-gray-100 pt-6">
-                    <h4 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">
-                      Description
-                    </h4>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      rows={6}
-                      placeholder={`Write the ${room.name} description…`}
-                      className="mt-3 w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
-                    />
-                    <button
-                      onClick={saveDescription}
-                      disabled={descBusy || !hasUnsavedDescription}
-                      className="mt-3 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                  {/* Image cropper modal */}
+                  <ImageCropperModal
+                    open={imageModalOpen}
+                    file={cropFile}
+                    onCancel={() => {
+                      setImageModalOpen(false);
+                      setCropFile(null);
+                    }}
+                    onSave={handleCroppedImage}
+                  />
+
+                  {/* Content area */}
+                  {draftText && (
+                    <div className="mt-4">
+                      <TextSectionEditor
+                        section={draftText}
+                        onSave={(content) => handleTextSave(draftText, content)}
+                        onCancel={handleTextCancel}
+                        busy={textBusy}
+                      />
+                    </div>
+                  )}
+
+                  {sections.length === 0 && !draftText ? (
+                    <p className="mt-4 text-sm text-gray-400">No sections yet.</p>
+                  ) : (
+                    <Reorder.Group
+                      axis="y"
+                      values={sections}
+                      onReorder={handleReorderChange}
+                      className="mt-4 space-y-3"
                     >
-                      {descBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      {descBusy ? "Saving…" : "Save Description"}
-                    </button>
-                  </section>
-                </div>
+                      {sections.map((section) => (
+                        <SectionReorderItem
+                          key={section.id}
+                          section={section}
+                          isEditing={editingTextId === section.id}
+                          onStartDrag={handleDragEnd}
+                          onEdit={() => handleEditText(section)}
+                          onDelete={() =>
+                            section.section_type === "text"
+                              ? handleDeleteText(section.id)
+                              : handleDeleteImage(section.id)
+                          }
+                          onReplace={() => handleReplaceImageClick(section.id)}
+                          onSaveText={handleTextSave}
+                          onCancelEdit={handleTextCancel}
+                          busyText={textBusy}
+                          busyImage={imageBusy}
+                        />
+                      ))}
+                    </Reorder.Group>
+                  )}
+                </section>
               )}
             </div>
           </motion.div>
@@ -588,7 +842,7 @@ export default function DiningEditor() {
         <section className="mt-10">
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900">Dining Rooms</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Manage the carousel images and description for each room.
+            Manage the page sections for each room.
           </p>
 
           <div className="mt-4 space-y-3">

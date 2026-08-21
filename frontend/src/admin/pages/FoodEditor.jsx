@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import ImageCropperModal from "../components/ImageCropperModal";
+import { compressImage } from "../utils/imageCompressor";
 
 const BUCKET = "food";
 
@@ -30,28 +31,55 @@ function tempId() {
   return `tmp_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+// Helper to extract storage path from a public URL
+function getStoragePathFromPublicUrl(publicUrl) {
+  const url = new URL(publicUrl);
+  const marker = `/object/public/${BUCKET}/`;
+  const markerIndex = url.pathname.indexOf(marker);
+  if (markerIndex === -1) {
+    throw new Error("Could not resolve storage path from image URL");
+  }
+
+  return decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
+}
+
 // Uploads to Storage and returns a public URL. Never touches the DB itself,
 // and never produces/stores base64 — only a storage object + its public URL.
 async function uploadImage(file, folder) {
-    const ext = file.name.split(".").pop();
+  try {
+    console.log(`[Compression] Starting upload for folder: ${folder}`);
+    console.log(`[Compression] Original file size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+    
+    const compressedFile = await compressImage(file);
+    
+    console.log(`[Compression] Compressed file size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`[Compression] Size reduction: ${((1 - compressedFile.size / file.size) * 100).toFixed(1)}% smaller`);
+
+    const ext = compressedFile.name?.includes(".")
+      ? compressedFile.name.split(".").pop()
+      : compressedFile.type.split("/").pop();
     const path = `${folder}/${tempId()}.${ext}`;
 
     const { error } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, file, {
+      .from(BUCKET)
+      .upload(path, compressedFile, {
         upsert: true,
         cacheControl: "3600",
-        });
+      });
 
     if (error) throw error;
 
     const { data } = supabase.storage
-        .from(BUCKET)
-        .getPublicUrl(path);
+      .from(BUCKET)
+      .getPublicUrl(path);
 
+    console.log(`[Compression] Upload successful: ${data.publicUrl}`);
     return data.publicUrl;
+  } catch (err) {
+    console.error(`[Compression] Error uploading image:`, err);
+    throw err;
+  }
 }
-
 
 /* ---------- Toast ---------- */
 function Toast({ toast }) {
@@ -149,6 +177,7 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
     if (!pendingFile) return;
     setBusy(true);
     try {
+      console.log(`[Cuisine Upload] Saving ${cuisine.name} cuisine image`);
       const publicUrl = await uploadImage(pendingFile, "categories");
 
       const { error } = await supabase
@@ -169,6 +198,38 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
     }
   }
 
+  async function handleRemove() {
+    if (pendingFile || preview) {
+      setPendingFile(null);
+      setPreview(null);
+      return;
+    }
+
+    if (!cuisine.image_url) return;
+
+    setBusy(true);
+    try {
+      const storagePath = getStoragePathFromPublicUrl(cuisine.image_url);
+      const { error: storageError } = await supabase.storage.from(BUCKET).remove([storagePath]);
+      if (storageError) throw storageError;
+
+      const { error } = await supabase
+        .from("food_cuisines")
+        .update({ image_url: null })
+        .eq("slug", cuisine.slug);
+      if (error) throw error;
+
+      setPendingFile(null);
+      setPreview(null);
+      notify("success", `${cuisine.name} image removed`);
+      await onSaved();
+    } catch (err) {
+      notify("error", err.message || `Failed to remove ${cuisine.name} image`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-black bg-white p-4 shadow-sm">
       <ImageSlot
@@ -181,16 +242,12 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
             setPreview(URL.createObjectURL(croppedFile));
           })
         }
-        onRemove={() => {
-          setPendingFile(null);
-          setPreview(null);
-        }}
+        onRemove={handleRemove}
       />
 
       <ImageCropperModal
         open={cropModal.open}
         file={cropModal.file}
-        aspect={1}
         onCancel={() => setCropModal({ open: false, file: null, onCropped: null })}
         onSave={(croppedFile) => {
           cropModal.onCropped?.(croppedFile);
@@ -275,6 +332,7 @@ function CuisinePageEditor({ cuisine, notify }) {
   async function handleMenuImageAdd(file) {
     setMenuBusy(true);
     try {
+      console.log(`[Menu Upload] Adding new menu page image for ${cuisine.name}`);
       const publicUrl = await uploadImage(file, "menu");
       const currentImages = page.menu_images || [];
       const newImages = [...currentImages, publicUrl];
@@ -298,6 +356,7 @@ function CuisinePageEditor({ cuisine, notify }) {
   async function handleMenuImageReplace(file, index) {
     setMenuBusy(true);
     try {
+      console.log(`[Menu Upload] Replacing menu page image at index ${index} for ${cuisine.name}`);
       const publicUrl = await uploadImage(file, "menu");
       const newImages = [...(page.menu_images || [])];
       newImages[index] = publicUrl;
@@ -384,7 +443,11 @@ function CuisinePageEditor({ cuisine, notify }) {
     try {
       const draft = draftDishes[dish.id] || {};
       let image_url = dish.image_url;
-      if (draft._file) image_url = await uploadImage(draft._file, `dishes/${cuisine.slug}`);
+      
+      if (draft._file) {
+        console.log(`[Dish Upload] Saving dish image for "${draft.name || dish.name || 'unnamed'}" in ${cuisine.name}`);
+        image_url = await uploadImage(draft._file, `dishes/${cuisine.slug}`);
+      }
 
       const { error } = await supabase
         .from("food_dishes")
