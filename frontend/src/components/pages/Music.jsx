@@ -19,9 +19,9 @@ const OrnamentalDivider = () => (
 const Music = () => {
   // Menu linking to your separate pages - reduced to 3 buttons
   const menuButtons = [
-    { img: scheduleImg, heading: 'Full Music Schedule', link: '/music-schedule' },
-    { img: originsImg, heading: 'History of Music at Trincas', link: '/music-origins' },
-    { img: weekdaysImg, heading: 'One Crazy Music Chart!', link: '/music-weekdays' },
+    { img: scheduleImg, heading: 'Trincas Music Schedule', link: '/music-schedule' },
+    { img: originsImg, heading: 'Tavern Behind Trincas', link: '/music-origins' },
+    { img: weekdaysImg, heading: 'Music Legacy: All the Artists from 1959 till now.', link: '/music-weekdays' },
   ];
 
   return (

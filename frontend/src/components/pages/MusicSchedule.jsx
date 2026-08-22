@@ -3,12 +3,12 @@ import { motion } from 'framer-motion';
 import Breadcrumb from '../Breadcrumb';
 import Footer from '../Footer';
 
-import grid1 from '../../assets/musicgrid1.jpeg';
-import grid2 from '../../assets/musicgrid2.jpeg';
-import grid3 from '../../assets/musicgrid3.jpeg';
-import grid4 from '../../assets/musicgrid4.jpeg';
+import grid1 from '../../assets/musicgrid6.jpeg';
+import grid2 from '../../assets/musicgrid2.png';
+import grid3 from '../../assets/musicgrid4.jpeg';
+import grid4 from '../../assets/musicgrid1.jpeg';
 import grid5 from '../../assets/musicgrid5.jpeg';
-import grid6 from '../../assets/musicgrid6.jpeg';
+import grid6 from '../../assets/musicgrid3.jpeg';
 
 const MusicSchedule = () => {
     const staggeredImages = [grid1, grid2, grid3, grid4, grid5, grid6];
