@@ -27,19 +27,18 @@ const Breadcrumb = ({ items }) => {
       initial="visible"
       animate={hidden ? "hidden" : "visible"}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      // Added bg-transparent to explicitly enforce a transparent floating overlay wrapper
-      className="sticky top-14 z-40 w-full bg-transparent pointer-events-none"
+      className="sticky top-14 z-50 w-full bg-white/80 backdrop-blur-sm shadow-[0_1px_0_rgba(0,0,0,0.04)] pointer-events-auto"
     >
-      <div className="flex items-center gap-2 px-4 py-3 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto bg-transparent">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center justify-center w-[26px] h-[26px] min-w-[26px] bg-black/40 backdrop-blur-md text-white rounded-full hover:bg-black/60 transition-colors shadow-sm pointer-events-auto"
+          className="flex h-[26px] min-w-[26px] items-center justify-center rounded-full bg-black/40 text-white shadow-sm backdrop-blur-md transition-colors hover:bg-black/60 pointer-events-auto"
           aria-label="Go back"
         >
           <ArrowLeft size={14} />
         </button>
 
-        <nav className="flex items-center flex-wrap text-xs text-gray-700 font-medium bg-white/40 backdrop-blur-md rounded-full h-[26px] px-3 shadow-sm border border-white/40 pointer-events-auto">
+        <nav className="flex h-[26px] items-center flex-wrap rounded-full border border-black/10 bg-white/80 px-3 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-md pointer-events-auto">
           {items.map((item, index) => (
             <React.Fragment key={index}>
               {index > 0 && <span className="mx-2 text-gray-400">/</span>}

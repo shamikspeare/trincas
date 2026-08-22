@@ -11,6 +11,7 @@ import FoodSubPage from "./components/pages/FoodSubPage";
 import Music from "./components/pages/Music";
 import MusicSchedule from "./components/pages/MusicSchedule";
 import History from "./components/pages/History";
+import HistoryTimeline from "./components/HistoryTimeline";
 import HistoryYearPage from "./components/pages/HistoryYearPage";
 import Press from "./components/pages/Press";
 import Pride from "./components/pages/Pride";
@@ -19,6 +20,7 @@ import PrideLgbtqSubPage from "./components/pages/PrideLgbtqSubPage";
 import Dashboard from "./admin/Dashboard";
 import AdminFood from "./admin/pages/FoodEditor";
 import AdminDining from "./admin/pages/DiningEditor";
+import AdminHistory from "./admin/pages/HistoryEditor";
 
 function AppLayout() {
   const location = useLocation();
@@ -77,6 +79,8 @@ function AppLayout() {
           <Route path="/music-schedule" element={<MusicSchedule />} />
 
           <Route path="/history" element={<History />} />
+          <Route path="/history-timeline" element={<HistoryTimeline />} />
+          <Route path="/history-timeline/:decade" element={<HistoryYearPage />} />
           <Route path="/history/:decade" element={<HistoryYearPage />} />
 
           <Route path="/press" element={<Press />} />
@@ -86,6 +90,7 @@ function AppLayout() {
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/admin/food" element={<AdminFood />} />
           <Route path="/admin/dining" element={<AdminDining />} />
+          <Route path="/admin/history" element={<AdminHistory />} />
         </Routes>
       </div>
     </div>

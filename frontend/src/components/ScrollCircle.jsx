@@ -115,7 +115,7 @@ export default function ScrollCircle() {
   };
 
   const handleExploreClick = () => {
-    navigate(`/history/${decades[activeIndex]}`);
+    navigate(`/history-timeline/${decades[activeIndex]}`);
   };
 
   return (
