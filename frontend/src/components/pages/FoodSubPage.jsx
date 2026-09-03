@@ -1,31 +1,24 @@
 // src/pages/FoodSubPage.jsx
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Expand, X, ImageOff, RefreshCw } from 'lucide-react';
-import Breadcrumb from '../Breadcrumb';
-import { supabase } from '../../lib/supabase';
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Expand, X, ImageOff, RefreshCw } from "lucide-react";
+import Breadcrumb from "../Breadcrumb";
+import PageContentLayout from "../PageContentLayout";
+import { fetchPageLayout, getFoodPageKey } from "../../lib/pageLayouts";
 
 const pageVariants = {
   hidden: { opacity: 0, y: 18 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.45,
-      ease: [0.22, 1, 0.36, 1],
-      staggerChildren: 0.08,
-    },
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1], staggerChildren: 0.08 },
   },
 };
 
 const cardVariants = {
   hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
 };
 
 const SectionHeading = ({ title, subtitle }) => (
@@ -37,37 +30,36 @@ const SectionHeading = ({ title, subtitle }) => (
       </h2>
       <span className="h-px w-8 bg-[#caa56a] opacity-70" />
     </div>
-    {subtitle ? (
-      <p className="mt-2 text-sm sm:text-base text-[#7d6c59]">{subtitle}</p>
-    ) : null}
+    {subtitle ? <p className="mt-2 text-sm sm:text-base text-[#7d6c59]">{subtitle}</p> : null}
   </div>
 );
 
-// Dish card: only image + name — food_dishes has no price/description column.
-const FeaturedCard = ({ dish }) => (
-  <motion.article
-    variants={cardVariants}
-    className="snap-start shrink-0 w-[78%] sm:w-[46%] lg:w-[23%]"
-  >
-    <div className="h-full overflow-hidden rounded-[22px] border border-[#eadfce] bg-white shadow-[0_10px_30px_rgba(23,15,7,0.08)]">
-      <div className="relative">
-        <img
-          src={dish.image_url}
-          alt={dish.name}
-          className="h-44 sm:h-48 w-full object-cover"
-          loading="lazy"
-          decoding="async"
-        />
+// Card: image + mandatory heading below it. The heading is stored in alt_text
+// and is used for both <img alt> and visible caption.
+const FeaturedCard = ({ card }) => {
+  const altText = card.alt_text || card.title || card.name || "";
+  return (
+    <motion.article
+      variants={cardVariants}
+      className="snap-start shrink-0 w-[78%] sm:w-[46%] lg:w-[23%]"
+    >
+      <div className="h-full overflow-hidden rounded-[22px] border border-[#eadfce] bg-white shadow-[0_10px_30px_rgba(23,15,7,0.08)]">
+        <div className="relative">
+          <img
+            src={card.image_url || card.src}
+            alt={altText}
+            className="h-44 sm:h-48 w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <div className="p-4 text-center">
+          <h3 className="font-serif text-lg text-[#1d1d1d]">{altText}</h3>
+        </div>
       </div>
-
-      <div className="p-4 text-center">
-        <h3 className="font-serif text-lg text-[#1d1d1d]">{dish.name}</h3>
-      </div>
-    </div>
-  </motion.article>
-);
-
-/* ---------- Loading / Error / Empty states ---------- */
+    </motion.article>
+  );
+};
 
 const PageLoading = ({ title }) => (
   <main className="min-h-[60vh] bg-white flex items-center justify-center">
@@ -101,39 +93,12 @@ const EmptyDishes = () => (
   </div>
 );
 
-/* ---------- Single fetch helper — selects only real columns ---------- */
-
-async function fetchFoodPageData(slug) {
-  const [{ data: page, error: pageError }, { data: dishes, error: dishesError }] = await Promise.all([
-    supabase
-      .from('food_pages')
-      .select('id, slug, menu_images') // Changed to fetch the menu_images array
-      .eq('slug', slug)
-      .maybeSingle(),
-    supabase
-      .from('food_dishes')
-      .select('id, slug, name, image_url, display_order')
-      .eq('slug', slug)
-      .order('display_order', { ascending: true }),
-  ]);
-
-  if (pageError) throw pageError;
-  if (dishesError) throw dishesError;
-
-  return { page: page || null, dishes: dishes || [] };
-}
-
-/* ---------- Main component (public page — read only) ---------- */
-
-// `slug` drives every Supabase query (e.g. "indian"); `title` is just display text.
-const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
+export default function FoodSubPage({ slug: propSlug, title, basePath }) {
   const { slug: routeSlug } = useParams();
-  const slug = propSlug ?? routeSlug ?? (basePath ? basePath.replace('/food-', '') : undefined);
+  const slug = propSlug ?? routeSlug ?? (basePath ? basePath.replace("/food-", "") : undefined);
+  const displayTitle = title || (slug ? `${slug.charAt(0).toUpperCase()}${slug.slice(1)}` : "Food");
 
-  const displayTitle = title || (slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : '');
-
-  const [page, setPage] = useState(null);
-  const [dishes, setDishes] = useState([]);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -141,23 +106,13 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const load = useCallback(async () => {
-    if (!slug) {
-      setPage(null);
-      setDishes([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
+    if (!slug) return;
     setLoading(true);
     setError(null);
-
     try {
-      const { page: pageData, dishes: dishData } = await fetchFoodPageData(slug);
-      setPage(pageData);
-      setDishes(dishData || []);
+      setData(await fetchPageLayout(getFoodPageKey(slug)));
     } catch (err) {
-      setError(err.message || 'Failed to load page');
+      setError(err.message || "Failed to load page");
     } finally {
       setLoading(false);
     }
@@ -179,37 +134,41 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
 
   useEffect(() => {
     if (selectedMenuOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
 
     const handleKeyDown = (e) => {
       if (!selectedMenuOpen) return;
-      if (e.key === 'Escape') closeModal();
+      if (e.key === "Escape") closeModal();
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [selectedMenuOpen]);
 
   if (loading) return <PageLoading title={displayTitle} />;
   if (error) return <PageError title={displayTitle} onRetry={load} />;
 
-  // Safely extract the image array
-  const menuImages = page?.menu_images || [];
-  const hasImages = menuImages.length > 0;
-  const coverImage = hasImages ? menuImages[0] : null;
+  const menuImages = data?.menuImages?.length
+    ? data.menuImages
+    : data?.layout?.lead_image_url
+      ? [data.layout.lead_image_url]
+      : [];
+  const previewMenuImage = menuImages[0] || null;
+  const hasImage = Boolean(previewMenuImage);
+  const cards = data?.imageCards || [];
 
   return (
     <main className="min-h-[60vh] bg-white">
       <Breadcrumb
         items={[
-          { label: 'Home', link: '/' },
-          { label: 'Food & Beverages', link: '/food' },
+          { label: "Home", link: "/" },
+          { label: "Food & Beverages", link: "/food" },
           { label: displayTitle },
         ]}
       />
@@ -222,7 +181,7 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
       >
         {/* Menu preview block */}
         <motion.section variants={cardVariants} className="mt-2 w-full">
-          {hasImages ? (
+          {hasImage ? (
             <button
               type="button"
               onClick={openModal}
@@ -230,13 +189,12 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
               aria-label={`Expand ${displayTitle} menu`}
             >
               <img
-                src={coverImage}
+                src={previewMenuImage}
                 alt={`${displayTitle} menu cover`}
                 className="h-auto w-full object-cover"
                 loading="eager"
                 decoding="async"
               />
-
               <span className="absolute inset-0 flex items-center justify-center">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/40 px-5 py-2.5 text-sm font-bold text-black shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-transform group-active:scale-95">
                   <Expand className="h-4 w-4" />
@@ -258,29 +216,32 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
         <motion.section variants={cardVariants} className="mt-10 sm:mt-12">
           <SectionHeading title="Featured Dishes" subtitle="Guest favourites" />
 
-          {dishes.length === 0 ? (
+          {cards.length === 0 ? (
             <EmptyDishes />
           ) : (
             <div className="mt-6 -mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
               <div className="flex gap-4 snap-x snap-mandatory">
-                {dishes.map((dish) => (
-                  <FeaturedCard key={dish.id} dish={dish} />
+                {cards.map((card) => (
+                  <FeaturedCard key={card.id} card={card} />
                 ))}
               </div>
             </div>
           )}
         </motion.section>
+
+        {data?.instagramVideos?.length ? (
+          <PageContentLayout instagramVideos={data.instagramVideos} instagramTitle="On Instagram" />
+        ) : null}
       </motion.div>
 
-      {/* Fullscreen multiple-image modal */}
+      {/* Fullscreen menu modal */}
       <AnimatePresence>
-        {selectedMenuOpen && hasImages ? (
+        {selectedMenuOpen && hasImage ? (
           <div
             className={`fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md transition-opacity duration-300 ${
-              isAnimating ? 'opacity-100' : 'opacity-0'
+              isAnimating ? "opacity-100" : "opacity-0"
             }`}
           >
-            {/* Close Button Header */}
             <div className="absolute top-0 left-0 right-0 z-10 flex justify-start p-4 pt-[74px]">
               <button
                 type="button"
@@ -292,22 +253,21 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
               </button>
             </div>
 
-            {/* Scrollable Container */}
             <div
               className="flex-1 overflow-y-auto w-full pt-[120px] pb-10 px-4 flex flex-col items-center"
               onClick={closeModal}
             >
               <div
-                className={`flex flex-col items-center justify-start gap-8 w-full max-w-5xl transition-all duration-300 ${
-                  isAnimating ? 'opacity-100 scale-100 y-0' : 'opacity-0 scale-95 translate-y-4'
+                className={`flex w-full max-w-5xl flex-col items-center justify-start gap-4 transition-all duration-300 ${
+                  isAnimating ? "opacity-100 scale-100 y-0" : "opacity-0 scale-95 translate-y-4"
                 }`}
                 onClick={(e) => e.stopPropagation()}
               >
-                {menuImages.map((src, index) => (
+                {menuImages.map((imageUrl, index) => (
                   <img
-                    key={index}
-                    src={src}
-                    alt={`${displayTitle} menu expanded page ${index + 1}`}
+                    key={`${imageUrl}-${index}`}
+                    src={imageUrl}
+                    alt={`${displayTitle} menu page ${index + 1}`}
                     loading={index === 0 ? "eager" : "lazy"}
                     decoding="async"
                     className="w-full h-auto object-contain rounded shadow-2xl"
@@ -320,6 +280,4 @@ const FoodSubPage = ({ slug: propSlug, title, basePath }) => {
       </AnimatePresence>
     </main>
   );
-};
-
-export default FoodSubPage;
+}

@@ -1,7 +1,6 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import gsap from "gsap";
-import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const decades = [
@@ -19,36 +18,11 @@ const TICKS_PER_DECADE = TOTAL_TICKS / decades.length;
 const STEP_ANGLE = (360 / TOTAL_TICKS) * TICKS_PER_DECADE;
 const INITIAL_ROTATION = 90;
 
-// How close (in degrees) a decade must be to the active position to show the button
-const SNAP_THRESHOLD = 10;
-
 export default function ScrollCircle() {
   const containerRef = useRef(null);
   const dialRef = useRef(null);
   const currentRotation = useRef(INITIAL_ROTATION);
-  const [showButton, setShowButton] = useState(true);
-  const [activeIndex, setActiveIndex] = useState(0);
   const navigate = useNavigate();
-
-  // Helper: update button visibility based on how close we are to a decade
-  const updateButtonVisibility = useCallback(() => {
-    // Convert current rotation back to a continuous index
-    const continuousIndex =
-      (INITIAL_ROTATION - currentRotation.current) / STEP_ANGLE;
-
-    const nearest = Math.round(continuousIndex);
-    const distance = Math.abs(continuousIndex - nearest) * STEP_ANGLE;
-
-    const isNear = distance < SNAP_THRESHOLD;
-
-    setShowButton(isNear);
-    if (isNear) {
-      const len = decades.length;
-      // Use modulo arithmetic to ensure activeIndex loops correctly and handles negative values
-      const wrappedIndex = ((nearest % len) + len) % len;
-      setActiveIndex(wrappedIndex);
-    }
-  }, []);
 
   // Continuous rotation (no snapping / no flick)
   const applyRotation = useCallback((deltaDegrees) => {
@@ -58,9 +32,7 @@ export default function ScrollCircle() {
     gsap.set(dialRef.current, {
       rotate: currentRotation.current,
     });
-
-    updateButtonVisibility();
-  }, [updateButtonVisibility]);
+  }, []);
 
   // Desktop wheel → continuous
   // Attached natively to avoid passive event listener warnings
@@ -83,6 +55,27 @@ export default function ScrollCircle() {
     };
   }, [applyRotation]);
 
+  useEffect(() => {
+    if (!dialRef.current) return;
+    const startRotation = INITIAL_ROTATION - STEP_ANGLE * 2; // 1970s
+    currentRotation.current = startRotation;
+    gsap.set(dialRef.current, { rotate: startRotation });
+    gsap.to(currentRotation, {
+      current: INITIAL_ROTATION, // 1950s
+      duration: 0.85,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (!dialRef.current) return;
+        gsap.set(dialRef.current, {
+          rotate: currentRotation.current,
+        });
+      },
+    });
+    return () => {
+      gsap.killTweensOf(currentRotation);
+    };
+  }, []);
+
   // Mobile drag → continuous (updates every frame of the pan)
   const handlePan = (_, info) => {
     // info.delta.y is the movement since last event
@@ -94,7 +87,6 @@ export default function ScrollCircle() {
   const handlePanEnd = (_, info) => {
     const velocity = info.velocity.y;
     if (Math.abs(velocity) < 80) {
-      updateButtonVisibility();
       return;
     }
 
@@ -109,13 +101,8 @@ export default function ScrollCircle() {
         gsap.set(dialRef.current, {
           rotate: currentRotation.current,
         });
-        updateButtonVisibility();
       },
     });
-  };
-
-  const handleExploreClick = () => {
-    navigate(`/history-timeline/${decades[activeIndex]}`);
   };
 
   return (
@@ -127,7 +114,7 @@ export default function ScrollCircle() {
     >
       
       {/* Dial */}
-      <div className="pointer-events-none absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div className="pointer-events-auto absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
           ref={dialRef}
           className="
@@ -170,51 +157,24 @@ export default function ScrollCircle() {
                 />
 
                 {isMainTick && (
-                  <span
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/history-timeline/${decadeText}`)}
+                    aria-label={`Open ${decadeText} timeline`}
                     className="
-                      whitespace-nowrap font-medium text-gray-400
+                      pointer-events-auto whitespace-nowrap font-medium text-blue-500
                       ml-[14px] sm:ml-[20px] md:ml-[18px]
-                      text-[26px] sm:text-[40px]
+                      text-[39px] sm:text-[60px]
                     "
                   >
                     {decadeText}
-                  </span>
+                  </button>
                 )}
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* Explore button – only visible when a decade is near the active position */}
-      <motion.button
-        className="
-          absolute z-10 flex items-center gap-2
-          rounded-full bg-black text-white font-medium
-
-          right-[10px] top-[calc(50%+28px)]
-          px-4 py-2 text-xs
-
-          sm:right-[10px] sm:top-[calc(50%+34px)]
-          sm:px-5 sm:py-2.5 sm:text-sm
-
-          md:right-auto md:left-[530px] md:top-[calc(50%+38px)]
-          md:px-6 md:py-3 md:text-base
-        "
-        initial={false}
-        animate={{
-          opacity: showButton ? 1 : 0,
-          y: showButton ? 0 : 8,
-        }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        style={{
-          pointerEvents: showButton ? "auto" : "none",
-        }}
-        onClick={handleExploreClick}
-      >
-        Explore
-        <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-      </motion.button>
     </motion.section>
   );
 }

@@ -15,6 +15,8 @@ import {
 import { supabase } from "../../lib/supabase";
 import ImageCropperModal from "../components/ImageCropperModal";
 import { compressImage } from "../utils/imageCompressor";
+import PageLayoutEditor from "../components/PageLayoutEditor";
+import { getFoodPageKey } from "../../lib/pageLayouts";
 
 const BUCKET = "food";
 
@@ -278,7 +280,7 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
    Loads its own data on mount; every mutation writes straight
    to Supabase and then re-fetches.
    ========================================================= */
-function CuisinePageEditor({ cuisine, notify }) {
+function _LegacyCuisinePageEditor({ cuisine, notify }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [menuBusy, setMenuBusy] = useState(false);
@@ -654,6 +656,16 @@ function CuisinePageEditor({ cuisine, notify }) {
   );
 }
 
+function CuisinePageEditor({ cuisine, notify }) {
+  return (
+    <PageLayoutEditor
+      pageKey={getFoodPageKey(cuisine.slug)}
+      title={`${cuisine.name} cuisine page`}
+      notify={notify}
+    />
+  );
+}
+
 /* =========================================================
    Main editor
    ========================================================= */
@@ -754,7 +766,7 @@ export default function FoodEditor() {
         <section className="mt-10">
           <h2 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Cuisine Pages</h2>
           <p className="mt-1 text-lg text-gray-500 sm:text-xl">
-            Manage the menu image and featured dishes for each cuisine page.
+            Manage the heading, lead image, text, image cards, and Instagram videos for each cuisine page.
           </p>
 
           <div className="mt-4 space-y-3">

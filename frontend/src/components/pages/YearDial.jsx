@@ -186,7 +186,7 @@ export default function YearDial({ years, activeYear, setActiveYear }) {
         </div>
       </motion.div>
 
-      <div className="mt-12 mb-8 flex flex-col items-center text-gray-300 sm:mt-10 sm:mb-12 md:mt-12 md:mb-14">
+      <div className="mt-16 mb-8 flex flex-col items-center text-blue-500 sm:mt-14 sm:mb-12 md:mt-18 md:mb-14">
         <ChevronsDown className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />
         <p className="mt-3 text-xs sm:text-sm font-medium tracking-[0.12em]">Scroll Down</p>
       </div>

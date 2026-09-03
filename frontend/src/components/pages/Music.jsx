@@ -1,104 +1,124 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import Breadcrumb from '../Breadcrumb';
-import Footer from '../Footer';
+import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
+import PageContentLayout from "../PageContentLayout";
+import Footer from "../Footer";
+import { fetchPageLayout, MUSIC_PAGE_KEY } from "../../lib/pageLayouts";
+import trincasMusicScheduleImage from "../../assets/music-stars-of-trincas.png";
+import tavernMusicScheduleImage from "../../assets/music-origins.png";
+import musicLegacyImage from "../../assets/music-weekdays.png";
 
-// Swapped the schedule image out for the stars image
-import scheduleImg from '../../assets/music-stars-of-trincas.png';
-import originsImg from '../../assets/music-origins.png';
-import weekdaysImg from '../../assets/music-weekdays.png';
+export default function Music() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-// Clean, simple line divider
-const OrnamentalDivider = () => (
-  <div className="flex items-center justify-center mt-6 mb-2 opacity-50">
-    <div className="w-16 h-[1px]" style={{ backgroundColor: '#000000' }} />
-  </div>
-);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-const Music = () => {
-  // Menu linking to your separate pages - reduced to 3 buttons
-  const menuButtons = [
-    { img: scheduleImg, heading: 'Trincas Music Schedule', link: '/music-schedule' },
-    { img: originsImg, heading: 'Tavern Behind Trincas', link: '/music-origins' },
-    { img: weekdaysImg, heading: 'Music Legacy: All the Artists from 1959 till now.', link: '/music-weekdays' },
+    try {
+      setData(await fetchPageLayout(MUSIC_PAGE_KEY));
+    } catch (err) {
+      setError(err.message || "Failed to load music page");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) {
+    return (
+      <main className="min-h-[60vh] bg-white flex items-center justify-center text-gray-500">
+        Loading music…
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-[60vh] bg-white flex flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="text-gray-500">Failed to load the music page.</p>
+
+        <button
+          type="button"
+          onClick={load}
+          className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Try again
+        </button>
+      </main>
+    );
+  }
+
+  const musicSubPages = [
+    {
+      heading: "Trincas Music Schedule",
+      image: trincasMusicScheduleImage,
+      link: "/music-schedule",
+    },
+    {
+      heading: "Tavern Music Schedule",
+      image: tavernMusicScheduleImage,
+      link: "/music-tavern-schedule",
+    },
+    {
+      heading: "Music Legacy",
+      image: musicLegacyImage,
+      link: "/music-legacy",
+    },
   ];
 
   return (
-    <main className="w-full bg-white min-h-screen flex flex-col text-gray-900">
-      <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Music' }]} />
+    <>
+      <PageContentLayout
+        breadcrumbs={[{ label: "Home", link: "/" }, { label: "Music" }]}
+        layout={data?.layout}
+        imageCards={data?.imageCards}
+        instagramVideos={data?.instagramVideos}
+        imageCardsTitle="Music Highlights"
+        instagramTitle="On Instagram"
+      />
 
-      <div className="w-full flex justify-center pt-10 pb-8 px-4">
-        <h2
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 'clamp(3rem, 6vw, 4.5rem)',
-            fontWeight: 500,
-            color: '#000000',
-            letterSpacing: '0.04em',
-            textAlign: 'center',
-          }}
-        >
-          Music at Trincas
-        </h2>
-      </div>
-
-      {/* Renders all buttons stacked dynamically */}
-      <div className="w-full flex flex-col pb-16">
-        {menuButtons.map(({ img, heading, link }, index) => (
-          <section key={heading} className="w-full flex flex-col items-center">
-            <div
-              className="mx-auto flex flex-col items-center w-full"
-              style={{ maxWidth: 600, padding: '0.5rem 1.25rem 1.5rem 1.25rem' }}
+      <section className="mx-auto w-full max-w-5xl px-4 pt-4 pb-14 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 md:gap-12">
+          {musicSubPages.map((item) => (
+            <Link
+              key={item.link}
+              to={item.link}
+              className="mx-auto flex w-full max-w-2xl flex-col items-center transition-opacity hover:opacity-90"
             >
-              <motion.div
-                className="w-full transition-transform duration-300 rounded-2xl overflow-hidden bg-white"
-                style={{ maxWidth: 520 }}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.02, y: -4 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                <Link to={link} className="block group w-full h-full">
-                  <img
-                    src={img}
-                    alt={heading}
-                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700 ease-out"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </Link>
-              </motion.div>
+              <img
+                src={item.image}
+                alt={item.heading}
+                className="h-auto w-full rounded-3xl object-cover"
+                loading="lazy"
+                decoding="async"
+              />
 
-              <motion.h2
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                className="mt-4 text-center select-none"
+              <h2
+                className="mt-4 text-center text-black"
                 style={{
                   fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: 'clamp(1.8rem, 4.5vw, 2.5rem)',
+                  fontSize: "clamp(2rem, 5vw, 3.1rem)",
                   fontWeight: 500,
-                  color: '#000000',
-                  letterSpacing: '0.02em',
+                  letterSpacing: "0.01em",
                 }}
               >
-                <Link to={link} className="hover:text-gray-700 transition-colors">
-                  {heading}
-                </Link>
-              </motion.h2>
+                {item.heading}
+              </h2>
 
-              {/* Only show the divider if it's not the last item in the list */}
-              {index !== menuButtons.length - 1 && <OrnamentalDivider />}
-            </div>
-          </section>
-        ))}
-      </div>
+              <span className="mt-5 h-px w-20 bg-gray-300" />
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <Footer />
-    </main>
+    </>
   );
-};
-
-export default Music;
+}

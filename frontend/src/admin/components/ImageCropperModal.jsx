@@ -204,13 +204,15 @@ export default function ImageCropperModal({
                 aspect={aspectRatio || undefined}
                 keepSelection
               >
-                <img
-                  ref={imgRef}
-                  src={imageSrc}
-                  alt="To crop"
-                  onLoad={onImageLoad}
-                  style={{ maxHeight: 420, display: "block" }}
-                />
+                {imageSrc ? (
+                  <img
+                    ref={imgRef}
+                    src={imageSrc}
+                    alt="To crop"
+                    onLoad={onImageLoad}
+                    style={{ maxHeight: 420, display: "block" }}
+                  />
+                ) : null}
               </ReactCrop>
             </div>
 

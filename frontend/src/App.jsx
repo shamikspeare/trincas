@@ -10,6 +10,8 @@ import Food from "./components/pages/Food";
 import FoodSubPage from "./components/pages/FoodSubPage";
 import Music from "./components/pages/Music";
 import MusicSchedule from "./components/pages/MusicSchedule";
+import MusicTavernSchedule from "./components/pages/MusicTavernSchedule";
+import MusicLegacy from "./components/pages/MusicLegacy";
 import History from "./components/pages/History";
 import HistoryTimeline from "./components/HistoryTimeline";
 import HistoryYearPage from "./components/pages/HistoryYearPage";
@@ -21,6 +23,7 @@ import Dashboard from "./admin/Dashboard";
 import AdminFood from "./admin/pages/FoodEditor";
 import AdminDining from "./admin/pages/DiningEditor";
 import AdminHistory from "./admin/pages/HistoryEditor";
+import AdminMusic from "./admin/pages/MusicEditor";
 
 function AppLayout() {
   const location = useLocation();
@@ -77,6 +80,8 @@ function AppLayout() {
 
           <Route path="/music" element={<Music />} />
           <Route path="/music-schedule" element={<MusicSchedule />} />
+          <Route path="/music-tavern-schedule" element={<MusicTavernSchedule />} />
+          <Route path="/music-legacy" element={<MusicLegacy />} />
 
           <Route path="/history" element={<History />} />
           <Route path="/history-timeline" element={<HistoryTimeline />} />
@@ -91,6 +96,7 @@ function AppLayout() {
           <Route path="/admin/food" element={<AdminFood />} />
           <Route path="/admin/dining" element={<AdminDining />} />
           <Route path="/admin/history" element={<AdminHistory />} />
+          <Route path="/admin/music" element={<AdminMusic />} />
         </Routes>
       </div>
     </div>
