@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { GripVertical, ImagePlus, Play, Loader2, Save, Trash2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { fetchPageLayout, normalizeInstagramUrl } from "../../lib/pageLayouts";
-import { compressImage } from "../utils/imageCompressor";
-import ImageCropperModal from "./ImageCropperModal";
+import { IMAGE_ACCEPT, processImage, validateImage } from "../utils/processImage";
+import ImageProcessingModal from "./ImageProcessingModal";
 
 const BUCKET = "page-content";
 
@@ -12,11 +12,10 @@ function tempId() {
   return `layout_${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`;
 }
 
-async function uploadPageImage(file, pageKey) {
-  const compressed = await compressImage(file);
-  const extension = compressed.name?.split(".").pop() || compressed.type.split("/").pop() || "jpg";
-  const path = `${pageKey.replace(/[^a-z0-9-]/gi, "-")}/${tempId()}.${extension}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, compressed, { upsert: false, cacheControl: "3600" });
+async function uploadPageImage(file, pageKey, options = {}) {
+  const processed = await processImage(file, options);
+  const path = `${pageKey.replace(/[^a-z0-9-]/gi, "-")}/${tempId()}.webp`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, processed, { upsert: false, cacheControl: "3600", contentType: "image/webp" });
   if (error) throw error;
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   if (!data?.publicUrl) throw new Error("Could not create an image URL");
@@ -41,7 +40,7 @@ function ImageSlot({ src, label, busy, onSelect, onRemove, ratio = "aspect-[16/1
           {src ? <button type="button" onClick={onRemove} className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-rose-600 shadow">Remove</button> : null}
         </div>
       )}
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(event) => {
+      <input ref={inputRef} type="file" accept={IMAGE_ACCEPT} className="hidden" onChange={(event) => {
         const file = event.target.files?.[0];
         if (file) onSelect(file);
         event.target.value = "";
@@ -111,14 +110,20 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
   }
 
   function openCrop(file, target) {
+    try {
+      validateImage(file);
+    } catch (error) {
+      notify?.("error", error.message);
+      return;
+    }
     setCropTarget({ file, target });
   }
 
-  async function saveCroppedImage(file) {
+  async function saveProcessedImage(options) {
     if (!cropTarget) return;
     setUploading(true);
     try {
-      const imageUrl = await uploadPageImage(file, pageKey);
+      const imageUrl = await uploadPageImage(cropTarget.file, pageKey, options);
       if (cropTarget.target.kind === "lead") {
         const { error: updateError } = await supabase.from("page_layouts").update({ lead_image_url: imageUrl }).eq("page_key", pageKey);
         if (updateError) throw updateError;
@@ -308,7 +313,7 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
         </div>
       </section>
 
-      <ImageCropperModal open={Boolean(cropTarget)} file={cropTarget?.file} onCancel={() => setCropTarget(null)} onSave={saveCroppedImage} />
+      <ImageProcessingModal open={Boolean(cropTarget)} file={cropTarget?.file} onCancel={() => setCropTarget(null)} onSave={saveProcessedImage} />
     </div>
   );
 }

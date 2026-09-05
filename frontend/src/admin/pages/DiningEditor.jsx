@@ -15,14 +15,14 @@ import {
   Pencil,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-import { compressImage } from "../utils/imageCompressor";
+import { IMAGE_ACCEPT, processImage, validateImage } from "../utils/processImage";
 import {
   fetchPageSections,
   updateSection,
   deleteSection,
   reorderSections,
 } from "../utils/diningSections";
-import ImageCropperModal from "../components/ImageCropperModal";
+import ImageProcessingModal from "../components/ImageProcessingModal";
 
 const BUCKET = "dining";
 
@@ -39,15 +39,12 @@ function tempId() {
 }
 
 // Uploads to Storage under public/<room-slug>/ and returns the public URL.
-async function uploadImage(file, roomSlug) {
-  const compressedFile = await compressImage(file);
-  const ext = compressedFile.name?.includes(".")
-    ? compressedFile.name.split(".").pop()
-    : compressedFile.type.split("/").pop();
-  const path = `public/${roomSlug}/${tempId()}.${ext}`;
+async function uploadImage(file, roomSlug, options = {}) {
+  const processedFile = await processImage(file, options);
+  const path = `public/${roomSlug}/${tempId()}.webp`;
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(path, compressedFile, { upsert: true, cacheControl: "3600" });
+    .upload(path, processedFile, { upsert: true, cacheControl: "3600", contentType: "image/webp" });
   if (uploadError) throw uploadError;
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
@@ -118,7 +115,7 @@ function ImageSlot({ src, onReplace, onRemove, busy, ratio = "aspect-[16/10]", l
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_ACCEPT}
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -135,11 +132,15 @@ function ImageSlot({ src, onReplace, onRemove, busy, ratio = "aspect-[16/10]", l
    ========================================================= */
 function DiningThumbnailCard({ room, notify, onSaved }) {
   const [preview, setPreview] = useState(null);
-  const [pendingFile, setPendingFile] = useState(null);
   const [busy, setBusy] = useState(false);
 
   async function handleUpload(file) {
-    setPendingFile(file);
+    try {
+      validateImage(file);
+    } catch (error) {
+      notify("error", error.message);
+      return;
+    }
     setPreview(URL.createObjectURL(file));
     setBusy(true);
     try {
@@ -151,7 +152,6 @@ function DiningThumbnailCard({ room, notify, onSaved }) {
         .eq("slug", room.slug);
       if (error) throw error;
 
-      setPendingFile(null);
       setPreview(null);
       notify("success", `${room.name} thumbnail saved`);
       await onSaved();
@@ -544,16 +544,24 @@ function RoomEditorSection({ room, notify }) {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      try {
+        validateImage(file);
+      } catch (error) {
+        notify("error", error.message);
+        e.target.value = "";
+        return;
+      }
       setCropFile(file);
       setImageModalOpen(true);
     }
     e.target.value = "";
   };
 
-  const handleCroppedImage = async (croppedFile) => {
+  const handleProcessedImage = async (options) => {
+    if (!cropFile) return;
     setImageBusy(true);
     try {
-      const publicUrl = await uploadImage(croppedFile, room.slug);
+      const publicUrl = await uploadImage(cropFile, room.slug, options);
       if (imageEditTarget) {
         await updateSection(imageEditTarget, { image_url: publicUrl });
         notify("success", "Image updated");
@@ -685,20 +693,19 @@ function RoomEditorSection({ room, notify }) {
                   <input
                     ref={hiddenFileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept={IMAGE_ACCEPT}
                     className="hidden"
                     onChange={handleFileChange}
                   />
 
-                  {/* Image cropper modal */}
-                  <ImageCropperModal
+                  <ImageProcessingModal
                     open={imageModalOpen}
                     file={cropFile}
                     onCancel={() => {
                       setImageModalOpen(false);
                       setCropFile(null);
                     }}
-                    onSave={handleCroppedImage}
+                    onSave={handleProcessedImage}
                   />
 
                   {/* Content area */}

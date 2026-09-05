@@ -13,8 +13,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-import ImageCropperModal from "../components/ImageCropperModal";
-import { compressImage } from "../utils/imageCompressor";
+import ImageProcessingModal from "../components/ImageProcessingModal";
+import { IMAGE_ACCEPT, processImage, validateImage } from "../utils/processImage";
 import PageLayoutEditor from "../components/PageLayoutEditor";
 import { getFoodPageKey } from "../../lib/pageLayouts";
 
@@ -47,26 +47,17 @@ function getStoragePathFromPublicUrl(publicUrl) {
 
 // Uploads to Storage and returns a public URL. Never touches the DB itself,
 // and never produces/stores base64 — only a storage object + its public URL.
-async function uploadImage(file, folder) {
+async function uploadImage(file, folder, options = {}) {
   try {
-    console.log(`[Compression] Starting upload for folder: ${folder}`);
-    console.log(`[Compression] Original file size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-    
-    const compressedFile = await compressImage(file);
-    
-    console.log(`[Compression] Compressed file size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`[Compression] Size reduction: ${((1 - compressedFile.size / file.size) * 100).toFixed(1)}% smaller`);
-
-    const ext = compressedFile.name?.includes(".")
-      ? compressedFile.name.split(".").pop()
-      : compressedFile.type.split("/").pop();
-    const path = `${folder}/${tempId()}.${ext}`;
+    const processedFile = await processImage(file, options);
+    const path = `${folder}/${tempId()}.webp`;
 
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(path, compressedFile, {
+      .upload(path, processedFile, {
         upsert: true,
         cacheControl: "3600",
+        contentType: "image/webp",
       });
 
     if (error) throw error;
@@ -75,10 +66,10 @@ async function uploadImage(file, folder) {
       .from(BUCKET)
       .getPublicUrl(path);
 
-    console.log(`[Compression] Upload successful: ${data.publicUrl}`);
+    console.log(`[Image processing] Upload successful: ${data.publicUrl}`);
     return data.publicUrl;
   } catch (err) {
-    console.error(`[Compression] Error uploading image:`, err);
+    console.error(`[Image processing] Error uploading image:`, err);
     throw err;
   }
 }
@@ -148,7 +139,7 @@ function ImageSlot({ src, onReplace, onRemove, busy, ratio = "aspect-[16/10]", l
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_ACCEPT}
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -169,10 +160,15 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
   const [preview, setPreview] = useState(null);
   const [pendingFile, setPendingFile] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [cropModal, setCropModal] = useState({ open: false, file: null, onCropped: null });
+  const [processingModal, setProcessingModal] = useState({ open: false, file: null, onSave: null });
 
-  function openCropModal(file, onCropped) {
-    setCropModal({ open: true, file, onCropped });
+  function openProcessingModal(file, onSave) {
+    try {
+      validateImage(file);
+      setProcessingModal({ open: true, file, onSave });
+    } catch (error) {
+      notify("error", error.message);
+    }
   }
 
   async function handleSave() {
@@ -180,7 +176,7 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
     setBusy(true);
     try {
       console.log(`[Cuisine Upload] Saving ${cuisine.name} cuisine image`);
-      const publicUrl = await uploadImage(pendingFile, "categories");
+      const publicUrl = await uploadImage(pendingFile.file, "categories", pendingFile.options);
 
       const { error } = await supabase
         .from("food_cuisines")
@@ -239,21 +235,21 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
         busy={busy}
         label={`${cuisine.name} image`}
         onReplace={(file) =>
-          openCropModal(file, (croppedFile) => {
-            setPendingFile(croppedFile);
-            setPreview(URL.createObjectURL(croppedFile));
+          openProcessingModal(file, (options) => {
+            setPendingFile({ file, options });
+            setPreview(URL.createObjectURL(file));
           })
         }
         onRemove={handleRemove}
       />
 
-      <ImageCropperModal
-        open={cropModal.open}
-        file={cropModal.file}
-        onCancel={() => setCropModal({ open: false, file: null, onCropped: null })}
-        onSave={(croppedFile) => {
-          cropModal.onCropped?.(croppedFile);
-          setCropModal({ open: false, file: null, onCropped: null });
+      <ImageProcessingModal
+        open={processingModal.open}
+        file={processingModal.file}
+        onCancel={() => setProcessingModal({ open: false, file: null, onSave: null })}
+        onSave={(options) => {
+          processingModal.onSave?.(options);
+          setProcessingModal({ open: false, file: null, onSave: null });
         }}
       />
 
@@ -287,7 +283,7 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
   const [savingDishes, setSavingDishes] = useState(false);
   const [reordering, setReordering] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
-  const [cropModal, setCropModal] = useState({ open: false, file: null, onCropped: null });
+  const [processingModal, setProcessingModal] = useState({ open: false, file: null, onSave: null });
 
   const [page, setPage] = useState(null); // row from food_pages
   const [dishes, setDishes] = useState([]); // rows from food_dishes
@@ -326,8 +322,13 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
     load();
   }, [load]);
 
-  function openCropModal(file, onCropped) {
-    setCropModal({ open: true, file, onCropped });
+  function openProcessingModal(file, onSave) {
+    try {
+      validateImage(file);
+      setProcessingModal({ open: true, file, onSave });
+    } catch (error) {
+      notify("error", error.message);
+    }
   }
 
   // Handle adding a new menu page image
@@ -448,7 +449,7 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
       
       if (draft._file) {
         console.log(`[Dish Upload] Saving dish image for "${draft.name || dish.name || 'unnamed'}" in ${cuisine.name}`);
-        image_url = await uploadImage(draft._file, `dishes/${cuisine.slug}`);
+        image_url = await uploadImage(draft._file, `dishes/${cuisine.slug}`, draft._processing);
       }
 
       const { error } = await supabase
@@ -595,10 +596,11 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
                         ratio="aspect-square"
                         label="Dish photo"
                         onReplace={(file) =>
-                          openCropModal(file, (croppedFile) =>
+                          openProcessingModal(file, (options) =>
                             patchDraft(dish.id, {
-                              _file: croppedFile,
-                              _preview: URL.createObjectURL(croppedFile),
+                              _file: file,
+                              _processing: options,
+                              _preview: URL.createObjectURL(file),
                             })
                           )
                         }
@@ -639,14 +641,14 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
               })}
             </div>
 
-            <ImageCropperModal
-              open={cropModal.open}
-              file={cropModal.file}
+            <ImageProcessingModal
+              open={processingModal.open}
+              file={processingModal.file}
               aspect={1}
-              onCancel={() => setCropModal({ open: false, file: null, onCropped: null })}
-              onSave={(croppedFile) => {
-                cropModal.onCropped?.(croppedFile);
-                setCropModal({ open: false, file: null, onCropped: null });
+              onCancel={() => setProcessingModal({ open: false, file: null, onSave: null })}
+              onSave={(options) => {
+                processingModal.onSave?.(options);
+                setProcessingModal({ open: false, file: null, onSave: null });
               }}
             />
           </section>
