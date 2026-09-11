@@ -137,32 +137,6 @@ function processInBrowser(file, options = {}) {
   });
 }
 
-function showProcessingSummaryAlert(summary) {
-  if (!summary) return;
-  const { original, converted } = summary;
-  const savedPercent = original.size > 0
-    ? Math.round(((original.size - converted.size) / original.size) * 100)
-    : 0;
-
-  const lines = [
-    `✅ Image processed successfully!`,
-    ``,
-    `── Original ──`,
-    `Format:     ${original.format}`,
-    `Size:       ${formatImageBytes(original.size)}`,
-    `Resolution: ${formatImageResolution(original)}`,
-    ``,
-    `── Converted ──`,
-    `Format:     ${converted.format}`,
-    `Size:       ${formatImageBytes(converted.size)}`,
-    `Resolution: ${formatImageResolution(converted)}`,
-  ];
-  if (savedPercent > 0) {
-    lines.push(``, `💾 ${savedPercent}% smaller`);
-  }
-  alert(lines.join("\n"));
-}
-
 export async function processImage(file, options = {}) {
   validateImage(file);
   const original = await buildImageStats(file);
@@ -171,8 +145,6 @@ export async function processImage(file, options = {}) {
   const converted = await buildImageStats(processed);
 
   processed.processingSummary = { original, converted };
-
-  showProcessingSummaryAlert(processed.processingSummary);
 
   return processed;
 }

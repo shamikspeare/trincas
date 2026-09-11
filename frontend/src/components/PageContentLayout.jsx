@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { ImageOff, Play } from "lucide-react";
+import { ImageOff } from "lucide-react";
 import Breadcrumb from "./Breadcrumb";
-import { normalizeInstagramUrl } from "../lib/pageLayouts";
+import InstagramReelCarousel from "./InstagramReelCarousel";
 
 const pageVariants = {
   hidden: { opacity: 0, y: 18 },
@@ -62,40 +62,6 @@ function ImageCarousel({ cards, title }) {
     </motion.section>
   );
 }
-
-function InstagramCarousel({ videos, title }) {
-  const validVideos = videos
-    .map((video) => ({ ...video, canonicalUrl: normalizeInstagramUrl(video.instagram_url) }))
-    .filter((video) => video.canonicalUrl);
-  if (!validVideos.length) return null;
-  return (
-    <motion.section variants={sectionVariants} className="mt-10 sm:mt-12">
-      <SectionHeading>{title}</SectionHeading>
-      <div className="mt-6 -mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
-        <div className="flex gap-4 snap-x snap-mandatory">
-          {validVideos.map((video) => (
-            <a
-              key={video.id}
-              href={video.canonicalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="group snap-start shrink-0 w-[78%] sm:w-[46%] lg:w-[23%]"
-              aria-label="Open Instagram video in a new tab"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden rounded-[22px] border border-[#eadfce] bg-gradient-to-br from-[#833ab4] via-[#fd1d1d] to-[#fcb045] p-5 shadow-[0_10px_30px_rgba(23,15,7,0.08)] transition-transform group-hover:-translate-y-1">
-                <div className="flex h-full flex-col items-center justify-center rounded-[16px] border border-white/30 bg-black/15 text-center text-white backdrop-blur-sm">
-                  <Play className="h-10 w-10" strokeWidth={1.5} />
-                  <span className="mt-3 text-sm font-semibold">Watch on Instagram</span>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-    </motion.section>
-  );
-}
-
 export default function PageContentLayout({
   breadcrumbs,
   layout,
@@ -150,7 +116,7 @@ export default function PageContentLayout({
           ) : null}
 
           <ImageCarousel cards={imageCards} title={imageCardsTitle} />
-          <InstagramCarousel videos={instagramVideos} title={instagramTitle} />
+          <InstagramReelCarousel videos={instagramVideos} title={instagramTitle} />
         </motion.div>
       ) : null}
     </Wrapper>

@@ -299,7 +299,7 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
 
       <section>
         <h4 className="text-lg font-semibold text-gray-900">Instagram videos</h4>
-        <p className="mt-1 text-sm text-gray-500">Cards use a generic Instagram thumbnail and open the video in a new tab.</p>
+        <p className="mt-1 text-sm text-gray-500">Cards embed and play the reel directly on the page.</p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input value={newInstagramUrl} onChange={(event) => setNewInstagramUrl(event.target.value)} placeholder="https://www.instagram.com/reel/..." className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
           <button type="button" onClick={addInstagramVideo} disabled={saving} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Play className="h-4 w-4" />Add video</button>

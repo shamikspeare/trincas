@@ -23,6 +23,12 @@ export function normalizeInstagramUrl(value) {
   }
 }
 
+export function getInstagramShortcode(url) {
+  if (!url) return null;
+  const match = url.match(/instagram\.com\/(?:reel|p|tv)\/([A-Za-z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
 export async function fetchPageLayout(pageKey) {
   const foodSlug = getFoodSlugFromPageKey(pageKey);
   const [layoutResult, imageCardsResult, instagramResult, foodMenuResult] = await Promise.all([
