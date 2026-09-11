@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import ImageProcessingModal from "../components/ImageProcessingModal";
-import { IMAGE_ACCEPT, processImage, validateImage } from "../utils/processImage";
+import ImageUploadSummaryMessage from "../components/ImageUploadSummaryMessage";
+import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
 import PageLayoutEditor from "../components/PageLayoutEditor";
 import { getFoodPageKey } from "../../lib/pageLayouts";
 
@@ -50,6 +51,7 @@ function getStoragePathFromPublicUrl(publicUrl) {
 async function uploadImage(file, folder, options = {}) {
   try {
     const processedFile = await processImage(file, options);
+    const summary = getImageProcessingSummary(processedFile);
     const path = `${folder}/${tempId()}.webp`;
 
     const { error } = await supabase.storage
@@ -67,7 +69,7 @@ async function uploadImage(file, folder, options = {}) {
       .getPublicUrl(path);
 
     console.log(`[Image processing] Upload successful: ${data.publicUrl}`);
-    return data.publicUrl;
+    return { publicUrl: data.publicUrl, summary };
   } catch (err) {
     console.error(`[Image processing] Error uploading image:`, err);
     throw err;
@@ -83,14 +85,14 @@ function Toast({ toast }) {
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
-      className={`fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg ${
+      className={`fixed right-6 top-6 z-50 flex items-start gap-3 rounded-xl border p-4 text-sm font-medium shadow-xl backdrop-blur-md max-w-md ${
         isError
-          ? "border-rose-100 bg-rose-50 text-rose-700"
-          : "border-emerald-100 bg-emerald-50 text-emerald-700"
+          ? "border-rose-200 bg-rose-50/95 text-rose-800"
+          : "border-emerald-200 bg-white/95 text-gray-800"
       }`}
     >
-      {isError ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-      {toast.message}
+      {isError ? <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" /> : <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />}
+      <div className="flex-1">{toast.message}</div>
     </motion.div>
   );
 }
@@ -176,7 +178,7 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
     setBusy(true);
     try {
       console.log(`[Cuisine Upload] Saving ${cuisine.name} cuisine image`);
-      const publicUrl = await uploadImage(pendingFile.file, "categories", pendingFile.options);
+      const { publicUrl, summary } = await uploadImage(pendingFile.file, "categories", pendingFile.options);
 
       const { error } = await supabase
         .from("food_cuisines")
@@ -187,7 +189,7 @@ function CuisineLandingCard({ cuisine, notify, onSaved }) {
 
       setPendingFile(null);
       setPreview(null);
-      notify("success", `${cuisine.name} image saved`);
+      notify("success", <ImageUploadSummaryMessage title={`${cuisine.name} image saved`} summary={summary} />);
       await onSaved(); // re-fetch from Supabase — it stays the source of truth
     } catch (err) {
       notify("error", err.message || `Failed to save ${cuisine.name}`);
@@ -336,7 +338,7 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
     setMenuBusy(true);
     try {
       console.log(`[Menu Upload] Adding new menu page image for ${cuisine.name}`);
-      const publicUrl = await uploadImage(file, "menu");
+      const { publicUrl, summary } = await uploadImage(file, "menu");
       const currentImages = page.menu_images || [];
       const newImages = [...currentImages, publicUrl];
       
@@ -346,7 +348,7 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
         .eq("slug", cuisine.slug);
         
       if (error) throw error;
-      notify("success", "Menu page added");
+      notify("success", <ImageUploadSummaryMessage title="Menu page added" summary={summary} />);
       await load();
     } catch (err) {
       notify("error", err.message || "Failed to add menu page");
@@ -360,7 +362,7 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
     setMenuBusy(true);
     try {
       console.log(`[Menu Upload] Replacing menu page image at index ${index} for ${cuisine.name}`);
-      const publicUrl = await uploadImage(file, "menu");
+      const { publicUrl, summary } = await uploadImage(file, "menu");
       const newImages = [...(page.menu_images || [])];
       newImages[index] = publicUrl;
 
@@ -370,7 +372,7 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
         .eq("slug", cuisine.slug);
         
       if (error) throw error;
-      notify("success", "Menu page updated");
+      notify("success", <ImageUploadSummaryMessage title="Menu page updated" summary={summary} />);
       await load();
     } catch (err) {
       notify("error", err.message || "Failed to update menu page");
@@ -447,9 +449,12 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
       const draft = draftDishes[dish.id] || {};
       let image_url = dish.image_url;
       
+      let summary = null;
       if (draft._file) {
         console.log(`[Dish Upload] Saving dish image for "${draft.name || dish.name || 'unnamed'}" in ${cuisine.name}`);
-        image_url = await uploadImage(draft._file, `dishes/${cuisine.slug}`, draft._processing);
+        const uploadResult = await uploadImage(draft._file, `dishes/${cuisine.slug}`, draft._processing);
+        image_url = uploadResult.publicUrl;
+        summary = uploadResult.summary;
       }
 
       const { error } = await supabase
@@ -462,7 +467,7 @@ function _LegacyCuisinePageEditor({ cuisine, notify }) {
         .eq("id", dish.id);
       if (error) throw error;
 
-      notify("success", "Dish saved");
+      notify("success", summary ? <ImageUploadSummaryMessage title="Dish saved" summary={summary} /> : "Dish saved");
       await load();
     } catch (err) {
       notify("error", err.message || "Failed to save dish");

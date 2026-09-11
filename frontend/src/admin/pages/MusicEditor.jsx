@@ -11,8 +11,23 @@ const MUSIC_PAGES = [
 
 function Toast({ toast }) {
   if (!toast) return null;
-  const Icon = toast.type === "error" ? AlertCircle : CheckCircle2;
-  return <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium shadow-lg"><Icon className="h-4 w-4" />{toast.message}</motion.div>;
+  const isError = toast.type === "error";
+  const Icon = isError ? AlertCircle : CheckCircle2;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      className={`fixed right-6 top-6 z-50 flex items-start gap-3 rounded-xl border p-4 text-sm font-medium shadow-xl backdrop-blur-md max-w-md ${
+        isError
+          ? "border-rose-200 bg-rose-50/95 text-rose-800"
+          : "border-emerald-200 bg-white/95 text-gray-800"
+      }`}
+    >
+      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${isError ? "text-rose-600" : "text-emerald-600"}`} />
+      <div className="flex-1">{toast.message}</div>
+    </motion.div>
+  );
 }
 
 export default function MusicEditor() {

@@ -15,7 +15,8 @@ import {
   Pencil,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-import { IMAGE_ACCEPT, processImage, validateImage } from "../utils/processImage";
+import ImageUploadSummaryMessage from "../components/ImageUploadSummaryMessage";
+import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
 import {
   fetchPageSections,
   updateSection,
@@ -41,6 +42,7 @@ function tempId() {
 // Uploads to Storage under public/<room-slug>/ and returns the public URL.
 async function uploadImage(file, roomSlug, options = {}) {
   const processedFile = await processImage(file, options);
+  const summary = getImageProcessingSummary(processedFile);
   const path = `public/${roomSlug}/${tempId()}.webp`;
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
@@ -49,7 +51,7 @@ async function uploadImage(file, roomSlug, options = {}) {
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   if (!data?.publicUrl) throw new Error("Could not resolve public URL for uploaded image");
-  return data.publicUrl;
+  return { publicUrl: data.publicUrl, summary };
 }
 
 /* ---------- Toast ---------- */
@@ -61,14 +63,14 @@ function Toast({ toast }) {
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
-      className={`fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg ${
+      className={`fixed right-6 top-6 z-50 flex items-start gap-3 rounded-xl border p-4 text-sm font-medium shadow-xl backdrop-blur-md max-w-md ${
         isError
-          ? "border-rose-100 bg-rose-50 text-rose-700"
-          : "border-emerald-100 bg-emerald-50 text-emerald-700"
+          ? "border-rose-200 bg-rose-50/95 text-rose-800"
+          : "border-emerald-200 bg-white/95 text-gray-800"
       }`}
     >
-      {isError ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-      {toast.message}
+      {isError ? <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" /> : <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />}
+      <div className="flex-1">{toast.message}</div>
     </motion.div>
   );
 }
@@ -144,7 +146,7 @@ function DiningThumbnailCard({ room, notify, onSaved }) {
     setPreview(URL.createObjectURL(file));
     setBusy(true);
     try {
-      const publicUrl = await uploadImage(file, room.slug);
+      const { publicUrl, summary } = await uploadImage(file, room.slug);
 
       const { error } = await supabase
         .from("dining")
@@ -153,7 +155,7 @@ function DiningThumbnailCard({ room, notify, onSaved }) {
       if (error) throw error;
 
       setPreview(null);
-      notify("success", `${room.name} thumbnail saved`);
+      notify("success", <ImageUploadSummaryMessage title={`${room.name} thumbnail saved`} summary={summary} />);
       await onSaved();
     } catch (err) {
       notify("error", err.message || `Failed to save ${room.name} thumbnail`);
@@ -561,10 +563,10 @@ function RoomEditorSection({ room, notify }) {
     if (!cropFile) return;
     setImageBusy(true);
     try {
-      const publicUrl = await uploadImage(cropFile, room.slug, options);
+      const { publicUrl, summary } = await uploadImage(cropFile, room.slug, options);
       if (imageEditTarget) {
         await updateSection(imageEditTarget, { image_url: publicUrl });
-        notify("success", "Image updated");
+        notify("success", <ImageUploadSummaryMessage title="Image updated" summary={summary} />);
       } else {
         const { data: existing, error: fetchError } = await supabase
           .from("dining_page_sections")
@@ -584,7 +586,7 @@ function RoomEditorSection({ room, notify }) {
           },
         ]);
         if (insertError) throw insertError;
-        notify("success", "Image section added");
+        notify("success", <ImageUploadSummaryMessage title="Image section added" summary={summary} />);
       }
       await load();
       setImageModalOpen(false);

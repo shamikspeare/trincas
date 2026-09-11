@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { GripVertical, ImagePlus, Play, Loader2, Save, Trash2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { fetchPageLayout, normalizeInstagramUrl } from "../../lib/pageLayouts";
-import { IMAGE_ACCEPT, processImage, validateImage } from "../utils/processImage";
+import ImageUploadSummaryMessage from "./ImageUploadSummaryMessage";
+import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
 import ImageProcessingModal from "./ImageProcessingModal";
 
 const BUCKET = "page-content";
@@ -14,12 +15,13 @@ function tempId() {
 
 async function uploadPageImage(file, pageKey, options = {}) {
   const processed = await processImage(file, options);
+  const summary = getImageProcessingSummary(processed);
   const path = `${pageKey.replace(/[^a-z0-9-]/gi, "-")}/${tempId()}.webp`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, processed, { upsert: false, cacheControl: "3600", contentType: "image/webp" });
   if (error) throw error;
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   if (!data?.publicUrl) throw new Error("Could not create an image URL");
-  return data.publicUrl;
+  return { publicUrl: data.publicUrl, summary };
 }
 
 function ImageSlot({ src, label, busy, onSelect, onRemove, ratio = "aspect-[16/10]" }) {
@@ -123,7 +125,7 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
     if (!cropTarget) return;
     setUploading(true);
     try {
-      const imageUrl = await uploadPageImage(cropTarget.file, pageKey, options);
+      const { publicUrl: imageUrl, summary } = await uploadPageImage(cropTarget.file, pageKey, options);
       if (cropTarget.target.kind === "lead") {
         const { error: updateError } = await supabase.from("page_layouts").update({ lead_image_url: imageUrl }).eq("page_key", pageKey);
         if (updateError) throw updateError;
@@ -139,7 +141,7 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
         const { error: updateError } = await supabase.from("page_image_cards").update({ image_url: imageUrl }).eq("id", cropTarget.target.id);
         if (updateError) throw updateError;
       }
-      notify?.("success", "Image saved");
+      notify?.("success", <ImageUploadSummaryMessage title="Image saved" summary={summary} />);
       setCropTarget(null);
       await load();
     } catch (err) {
