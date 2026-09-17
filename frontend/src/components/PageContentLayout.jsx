@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ImageOff } from "lucide-react";
 import Breadcrumb from "./Breadcrumb";
 import InstagramReelCarousel from "./InstagramReelCarousel";
+import { sanitizeHtml } from "../lib/sanitize";
 
 const pageVariants = {
   hidden: { opacity: 0, y: 18 },
@@ -21,9 +22,9 @@ function SectionHeading({ children }) {
   if (!children) return null;
   return (
     <div className="flex items-center justify-center gap-3 text-center">
-      <span className="h-px w-8 bg-[#caa56a] opacity-70" />
-      <h2 className="font-serif text-[clamp(1.8rem,6vw,3rem)] leading-none text-[#1e1e1e]">{children}</h2>
-      <span className="h-px w-8 bg-[#caa56a] opacity-70" />
+      <span className="h-px w-8 bg-gray-300" />
+      <h2 className="font-serif text-[clamp(1.8rem,6vw,3rem)] leading-none text-gray-900">{children}</h2>
+      <span className="h-px w-8 bg-gray-300" />
     </div>
   );
 }
@@ -37,7 +38,7 @@ function ImageCarousel({ cards, title }) {
         <div className="flex gap-4 snap-x snap-mandatory">
           {cards.map((card) => (
             <article key={card.id} className="snap-start shrink-0 w-[78%] sm:w-[46%] lg:w-[23%]">
-              <div className="h-full overflow-hidden rounded-[22px] border border-[#eadfce] bg-white shadow-[0_10px_30px_rgba(23,15,7,0.08)]">
+              <div className="h-full overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-sm">
                 {card.image_url ? (
                   <img
                     src={card.image_url}
@@ -47,12 +48,12 @@ function ImageCarousel({ cards, title }) {
                     decoding="async"
                   />
                 ) : (
-                  <div className="flex aspect-[4/3] items-center justify-center text-[#7d6c59]">
+                  <div className="flex aspect-[4/3] items-center justify-center text-gray-400">
                     <ImageOff className="h-6 w-6 opacity-60" />
                   </div>
                 )}
                 <div className="p-4 text-center">
-                  <h3 className="font-serif text-lg text-[#1d1d1d]">{card.alt_text || ""}</h3>
+                  <h3 className="font-serif text-lg text-gray-900">{card.alt_text || ""}</h3>
                 </div>
               </div>
             </article>
@@ -72,15 +73,12 @@ export default function PageContentLayout({
   embedded = false,
   backgroundClass = "bg-white",
 }) {
-  const paragraphs = (layout?.body || "")
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+  const sanitizedBody = sanitizeHtml(layout?.body || "");
 
   const hasContent = Boolean(
     layout?.heading ||
     layout?.lead_image_url ||
-    paragraphs.length > 0 ||
+    sanitizedBody ||
     imageCards.length > 0 ||
     instagramVideos.length > 0
   );
@@ -109,10 +107,12 @@ export default function PageContentLayout({
             </motion.section>
           ) : null}
 
-          {paragraphs.length ? (
-            <motion.section variants={sectionVariants} className="mx-auto mt-6 max-w-4xl space-y-4 text-base leading-relaxed text-[#514638] sm:text-lg">
-              {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-            </motion.section>
+          {sanitizedBody ? (
+            <motion.section
+              variants={sectionVariants}
+              className="mx-auto mt-6 max-w-4xl space-y-4 text-base leading-relaxed text-[#514638] sm:text-lg [&_a]:text-indigo-600 [&_a]:underline"
+              dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+            />
           ) : null}
 
           <ImageCarousel cards={imageCards} title={imageCardsTitle} />

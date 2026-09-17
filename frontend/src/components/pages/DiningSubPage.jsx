@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Breadcrumb from '../Breadcrumb';
 import { supabase } from '../../lib/supabase';
+import { sanitizeHtml } from '../../lib/sanitize';
 
 import mingHeaderImg from '../../assets/ming-header.png';
 import trincasLogoImg from '../../assets/logo.png';
@@ -97,7 +98,12 @@ export default function DiningSubPage() {
               ) : (
                 <div key={section.id} className="prose max-w-none text-gray-800">
                   {section.heading ? <h2 className="text-2xl font-semibold mb-2">{section.heading}</h2> : null}
-                  {section.body ? <p className="whitespace-pre-line">{section.body}</p> : null}
+                  {section.body ? (
+                    <div
+                      className="[&_a]:text-indigo-600 [&_a]:underline"
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(section.body) }}
+                    />
+                  ) : null}
                 </div>
               )
             ) : <div className="rounded-2xl border border-dashed p-8 text-center text-gray-500">No content available for this page yet.</div>}

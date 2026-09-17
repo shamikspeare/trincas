@@ -18,13 +18,13 @@ export default function InstagramReelEmbed({ url, className = "" }) {
       )}
       
       {error ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-[#fbf8f3] rounded-[16px] border border-[#eadfce]">
-          <p className="text-sm font-medium text-[#514638] mb-3">Couldn't load this reel</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-gray-50 rounded-[16px] border border-gray-200">
+          <p className="text-sm font-medium text-gray-600 mb-3">Couldn't load this reel</p>
           <a 
             href={url} 
             target="_blank" 
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-[#eadfce] bg-white px-4 py-2 text-sm font-medium text-[#1e1e1e] shadow-sm hover:bg-[#fbf8f3] transition-colors"
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50 transition-colors"
           >
             Watch on Instagram
             <ExternalLink className="h-4 w-4" />

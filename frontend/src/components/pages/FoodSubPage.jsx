@@ -24,13 +24,13 @@ const cardVariants = {
 const SectionHeading = ({ title, subtitle }) => (
   <div className="text-center">
     <div className="flex items-center gap-3 justify-center">
-      <span className="h-px w-8 bg-[#caa56a] opacity-70" />
-      <h2 className="font-serif text-[clamp(1.8rem,6vw,3rem)] leading-none text-[#1e1e1e]">
+      <span className="h-px w-8 bg-gray-300" />
+      <h2 className="font-serif text-[clamp(1.8rem,6vw,3rem)] leading-none text-gray-900">
         {title}
       </h2>
-      <span className="h-px w-8 bg-[#caa56a] opacity-70" />
+      <span className="h-px w-8 bg-gray-300" />
     </div>
-    {subtitle ? <p className="mt-2 text-sm sm:text-base text-[#7d6c59]">{subtitle}</p> : null}
+    {subtitle ? <p className="mt-2 text-sm sm:text-base text-gray-500">{subtitle}</p> : null}
   </div>
 );
 
@@ -43,7 +43,7 @@ const FeaturedCard = ({ card }) => {
       variants={cardVariants}
       className="snap-start shrink-0 w-[78%] sm:w-[46%] lg:w-[23%]"
     >
-      <div className="h-full overflow-hidden rounded-[22px] border border-[#eadfce] bg-white shadow-[0_10px_30px_rgba(23,15,7,0.08)]">
+      <div className="h-full overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-sm">
         <div className="relative">
           <img
             src={card.image_url || card.src}
@@ -54,7 +54,7 @@ const FeaturedCard = ({ card }) => {
           />
         </div>
         <div className="p-4 text-center">
-          <h3 className="font-serif text-lg text-[#1d1d1d]">{altText}</h3>
+          <h3 className="font-serif text-lg text-gray-900">{altText}</h3>
         </div>
       </div>
     </motion.article>
@@ -63,8 +63,8 @@ const FeaturedCard = ({ card }) => {
 
 const PageLoading = ({ title }) => (
   <main className="min-h-[60vh] bg-white flex items-center justify-center">
-    <div className="flex flex-col items-center gap-3 text-[#7d6c59]">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#eadfce] border-t-[#b47d22]" />
+    <div className="flex flex-col items-center gap-3 text-gray-600">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-gray-900" />
       <p className="text-sm">Loading {title}…</p>
     </div>
   </main>
@@ -73,11 +73,11 @@ const PageLoading = ({ title }) => (
 const PageError = ({ title, onRetry }) => (
   <main className="min-h-[60vh] bg-white flex items-center justify-center px-4">
     <div className="flex flex-col items-center gap-3 text-center">
-      <p className="text-[#7d6c59]">Couldn't load the {title} page right now.</p>
+      <p className="text-gray-600">Couldn't load the {title} page right now.</p>
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex items-center gap-2 rounded-full border border-[#eadfce] bg-white px-4 py-2 text-sm font-medium text-[#1e1e1e] shadow-sm hover:bg-[#fbf8f3]"
+        className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
       >
         <RefreshCw className="h-4 w-4" />
         Try again
@@ -87,7 +87,7 @@ const PageError = ({ title, onRetry }) => (
 );
 
 const EmptyDishes = () => (
-  <div className="mt-6 flex flex-col items-center justify-center gap-2 rounded-[22px] border border-dashed border-[#eadfce] bg-white/60 py-12 text-center text-[#7d6c59]">
+  <div className="mt-6 flex flex-col items-center justify-center gap-2 rounded-[22px] border border-dashed border-gray-200 bg-white/60 py-12 text-center text-gray-500">
     <ImageOff className="h-6 w-6 opacity-60" />
     <p className="text-sm">No featured dishes have been added yet.</p>
   </div>
@@ -203,7 +203,7 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
               </span>
             </button>
           ) : (
-            <div className="flex h-56 w-full items-center justify-center bg-white text-[#7d6c59]">
+            <div className="flex h-56 w-full items-center justify-center bg-white text-gray-500">
               <div className="flex flex-col items-center gap-2 text-sm">
                 <ImageOff className="h-6 w-6 opacity-60" />
                 Menu image coming soon

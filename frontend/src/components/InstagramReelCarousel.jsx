@@ -11,9 +11,9 @@ function SectionHeading({ children }) {
   if (!children) return null;
   return (
     <div className="flex items-center justify-center gap-3 text-center">
-      <span className="h-px w-8 bg-[#caa56a] opacity-70" />
-      <h2 className="font-serif text-[clamp(1.8rem,6vw,3rem)] leading-none text-[#1e1e1e]">{children}</h2>
-      <span className="h-px w-8 bg-[#caa56a] opacity-70" />
+      <span className="h-px w-8 bg-gray-300" />
+      <h2 className="font-serif text-[clamp(1.8rem,6vw,3rem)] leading-none text-gray-900">{children}</h2>
+      <span className="h-px w-8 bg-gray-300" />
     </div>
   );
 }

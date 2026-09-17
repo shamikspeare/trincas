@@ -15,6 +15,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { sanitizeHtml } from "../../lib/sanitize";
 import ImageUploadSummaryMessage from "../components/ImageUploadSummaryMessage";
 import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
 import {
@@ -24,6 +25,7 @@ import {
   reorderSections,
 } from "../utils/diningSections";
 import ImageProcessingModal from "../components/ImageProcessingModal";
+import RichTextEditor from "../components/RichTextEditor";
 
 const BUCKET = "dining";
 
@@ -205,14 +207,6 @@ function DiningThumbnailCard({ room, notify, onSaved }) {
 function TextSectionEditor({ section, onSave, onCancel, busy }) {
   const [heading, setHeading] = useState(section.heading || "");
   const [body, setBody] = useState(section.body || "");
-  const textareaRef = useRef(null);
-
-  useEffect(() => {
-    // Focus the textarea when the component mounts
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, []);
 
   useEffect(() => {
     // Update local state if the section prop changes (e.g., editing a different section)
@@ -243,13 +237,10 @@ function TextSectionEditor({ section, onSave, onCancel, busy }) {
         placeholder="Heading (optional)"
         className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium focus:border-indigo-400 focus:outline-none"
       />
-      <textarea
-        ref={textareaRef}
+      <RichTextEditor
         value={body}
-        onChange={(e) => setBody(e.target.value)}
-        rows={5}
+        onChange={setBody}
         placeholder="Body text…"
-        className="mt-2 w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
       />
 
       <div className="mt-3 flex items-center justify-end">
@@ -277,9 +268,10 @@ function TextPreviewCard({ section, onEdit, onDelete, busy }) {
           {section.heading && (
             <h4 className="text-sm font-semibold text-gray-900 truncate">{section.heading}</h4>
           )}
-          <p className="text-sm text-gray-700 line-clamp-4 overflow-hidden">
-            {section.body || ""}
-          </p>
+          <div
+            className="prose prose-sm max-w-none text-sm text-gray-700 line-clamp-4 overflow-hidden [&_a]:text-indigo-600 [&_a]:underline"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(section.body || "") }}
+          />
         </div>
         <div className="ml-3 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -476,36 +468,49 @@ function RoomEditorSection({ room, notify }) {
   const handleTextSave = async (section, { heading, body }) => {
     setTextBusy(true);
     try {
+      const cleanBody = sanitizeHtml(body);
       if (String(section.id).startsWith("tmp_")) {
+        // 1. Fetch existing rows with their display_order, newest first
         const { data: existing, error: fetchError } = await supabase
           .from("dining_page_sections")
-          .select("id")
+          .select("id, display_order")
           .eq("page_slug", room.slug)
-          .order("display_order", { ascending: true });
+          .order("display_order", { ascending: false });
         if (fetchError) throw fetchError;
 
-        const updates = (existing || []).map((row, idx) =>
-          supabase
+        // 2. Shift each existing row down by one — SEQUENTIALLY.
+        //    Never use Promise.all / map here: each Supabase request is its own
+        //    transaction, so concurrent updates violate the
+        //    UNIQUE(page_slug, display_order) constraint and return HTTP 409.
+        for (const row of existing || []) {
+          const { error } = await supabase
             .from("dining_page_sections")
-            .update({ display_order: idx + 1 })
-            .eq("id", row.id)
-        );
-        const insert = supabase.from("dining_page_sections").insert([
-          {
-            page_slug: room.slug,
-            section_type: "text",
-            display_order: 0,
-            heading,
-            body,
-            image_url: null,
-            alt_text: null,
-          },
-        ]);
-        const results = await Promise.all([insert, ...updates]);
-        const failed = results.find((r) => r.error);
-        if (failed) throw failed.error;
+            .update({
+              display_order: row.display_order + 1,
+            })
+            .eq("id", row.id);
+
+          if (error) throw error;
+        }
+
+        // 3. Insert the new section at display_order 0 — only AFTER all shifts finish.
+        const { error: insertError } = await supabase
+          .from("dining_page_sections")
+          .insert([
+            {
+              page_slug: room.slug,
+              section_type: "text",
+              display_order: 0,
+              heading,
+              body: cleanBody,
+              image_url: null,
+              alt_text: null,
+            },
+          ]);
+
+        if (insertError) throw insertError;
       } else {
-        await updateSection(section.id, { heading, body });
+        await updateSection(section.id, { heading, body: cleanBody });
       }
       notify("success", "Text section saved");
       await load();

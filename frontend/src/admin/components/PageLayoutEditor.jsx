@@ -1,11 +1,12 @@
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GripVertical, ImagePlus, Play, Loader2, Save, Trash2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { fetchPageLayout, normalizeInstagramUrl } from "../../lib/pageLayouts";
+import { sanitizeHtml } from "../../lib/sanitize";
 import ImageUploadSummaryMessage from "./ImageUploadSummaryMessage";
 import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
 import ImageProcessingModal from "./ImageProcessingModal";
+import RichTextEditor from "./RichTextEditor";
 
 const BUCKET = "page-content";
 
@@ -108,7 +109,10 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
   }
 
   async function saveText() {
-    await saveFields({ heading: draft.heading.trim() || null, body: draft.body.trim() || null }, "Page content saved");
+    await saveFields(
+      { heading: draft.heading.trim() || null, body: sanitizeHtml(draft.body) || null },
+      "Page content saved"
+    );
   }
 
   function openCrop(file, target) {
@@ -258,6 +262,14 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
     await persistOrder("page_instagram_videos", next);
   }
 
+  const isFoodPage = Boolean(pageKey?.startsWith("food:"));
+  const isMusicPage = Boolean(pageKey?.startsWith("music"));
+  const hideHeadingTextLead = isFoodPage || isMusicPage;
+
+  const cardSectionTitle = isFoodPage ? "Menu cards" : isMusicPage ? "Schedule cards" : "Image cards";
+  const cardItemLabel = isFoodPage ? "Menu card" : isMusicPage ? "Schedule card" : "Image card";
+  const addCardLabel = isFoodPage ? "Add menu card" : isMusicPage ? "Add schedule card" : "Add image card";
+
   if (loading) return <div className="flex items-center gap-2 py-6 text-sm text-gray-400"><Loader2 className="h-4 w-4 animate-spin" />Loading {title}…</div>;
   if (error) return <div className="rounded-lg border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">{error}<button onClick={load} className="ml-3 font-medium underline">Retry</button></div>;
 
@@ -268,32 +280,40 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
         <p className="mt-1 text-sm text-gray-500">Content appears in the same order on the public page.</p>
       </div>
 
-      <section>
-        <h4 className="text-lg font-semibold text-gray-900">Heading and paragraphs</h4>
-        <input value={draft.heading} onChange={(event) => setDraft((current) => ({ ...current, heading: event.target.value }))} placeholder="Heading (optional)" className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
-        <textarea value={draft.body} onChange={(event) => setDraft((current) => ({ ...current, body: event.target.value }))} rows={6} placeholder="Text paragraphs (separate paragraphs with a blank line)" className="mt-2 w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
-        <button type="button" onClick={saveText} disabled={saving} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save text
-        </button>
-      </section>
+      {!hideHeadingTextLead && (
+        <section>
+          <h4 className="text-lg font-semibold text-gray-900">Heading and paragraphs</h4>
+          <input value={draft.heading} onChange={(event) => setDraft((current) => ({ ...current, heading: event.target.value }))} placeholder="Heading (optional)" className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
+          <RichTextEditor
+            value={draft.body}
+            onChange={(html) => setDraft((current) => ({ ...current, body: html }))}
+            placeholder="Type your content here..."
+          />
+          <button type="button" onClick={saveText} disabled={saving} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save text
+          </button>
+        </section>
+      )}
+
+      {!hideHeadingTextLead && (
+        <section>
+          <h4 className="text-lg font-semibold text-gray-900">Lead image</h4>
+          <div className="mt-3 max-w-xl"><ImageSlot src={layout?.lead_image_url} label="Upload lead image" busy={uploading} onSelect={(file) => openCrop(file, { kind: "lead" })} onRemove={removeLeadImage} /></div>
+        </section>
+      )}
 
       <section>
-        <h4 className="text-lg font-semibold text-gray-900">Lead image</h4>
-        <div className="mt-3 max-w-xl"><ImageSlot src={layout?.lead_image_url} label="Upload lead image" busy={uploading} onSelect={(file) => openCrop(file, { kind: "lead" })} onRemove={removeLeadImage} /></div>
-      </section>
-
-      <section>
-        <h4 className="text-lg font-semibold text-gray-900">Image cards</h4>
+        <h4 className="text-lg font-semibold text-gray-900">{cardSectionTitle}</h4>
         <p className="mt-1 text-sm text-gray-500">Drag cards to set their horizontal display order.</p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {imageCards.map((card, index) => (
             <div key={card.id} draggable onDragStart={() => setDragging({ type: "image", index })} onDragOver={(event) => event.preventDefault()} onDrop={() => handleImageDrop(index)} className="rounded-xl border border-gray-200 p-3">
               <GripVertical className="mb-2 h-4 w-4 cursor-grab text-gray-300" />
-              <ImageSlot src={card.image_url} label="Image card" busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card", id: card.id })} onRemove={() => removeImageCard(card.id)} />
+              <ImageSlot src={card.image_url} label={cardItemLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card", id: card.id })} onRemove={() => removeImageCard(card.id)} />
               <input defaultValue={card.alt_text || ""} onBlur={(event) => updateImageAlt(card, event.target.value)} placeholder="Alt text (optional)" className="mt-3 w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
             </div>
           ))}
-          <ImageSlot src={null} label="Add image card" busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card-add" })} />
+          <ImageSlot src={null} label={addCardLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card-add" })} />
         </div>
       </section>
 
