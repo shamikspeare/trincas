@@ -2,12 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-import diningImg from '../../assets/dining.png';
-import foodImg from '../../assets/food.png';
-import musicImg from '../../assets/music.png';
-import historyImg from '../../assets/history.png';
-import pressImg from '../../assets/home-press.jpg';
-import prideImg from '../../assets/home-pride3.png';
+import diningImg from '../../assets/dining.webp';
+import foodImg from '../../assets/food.webp';
+import musicImg from '../../assets/music.webp';
+import historyImg from '../../assets/history.webp';
+import pressImg from '../../assets/home-press.webp';
+import prideImg from '../../assets/home-pride3.webp';
 
 const frames = [
   { img: diningImg, heading: 'Dining Spaces', link: '/dining' },
