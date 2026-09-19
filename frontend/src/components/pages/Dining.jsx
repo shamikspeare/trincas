@@ -177,8 +177,8 @@ const Dining = () => {
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Dining Spaces' }]} />
 
       {loading && (
-        <div className="w-full flex justify-center items-center py-20 text-[#3D2B1F]">
-          Loading dining spaces...
+        <div className="w-full flex justify-center items-center py-20 text-gray-400">
+          loading...
         </div>
       )}
 

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import YearDial from "./YearDial";
 import PageContentLayout from "../PageContentLayout";
 import { fetchPageLayout, getHistoryPageKey } from "../../lib/pageLayouts";
+import Breadcrumb from "../Breadcrumb";
 
 const getCurrentDecadeStart = () => Math.floor(new Date().getFullYear() / 10) * 10;
 
@@ -32,9 +32,19 @@ const YEAR_GRADIENTS = [
   { from: "#f5f6f8", via: "#edf0f4", to: "#e4e8ed" },
 ];
 
-function parseDecadeStart(decade) {
-  const match = decade?.match(/^(\d{4})s$/);
-  return match ? Number.parseInt(match[1], 10) : getCurrentDecadeStart();
+function parseParam(param) {
+  const match = param?.match(/^(\d{4})s?$/);
+  if (match) {
+    const isDecade = param.endsWith("s");
+    const year = match[1];
+    const decadeStart = Math.floor(Number.parseInt(year, 10) / 10) * 10;
+    return {
+      decadeStart,
+      initialYear: isDecade ? String(decadeStart) : year,
+    };
+  }
+  const currentDecadeStart = getCurrentDecadeStart();
+  return { decadeStart: currentDecadeStart, initialYear: String(currentDecadeStart) };
 }
 
 /** Deterministically map a year to one of the 10 gradient slots */
@@ -46,16 +56,18 @@ function yearToGradient(year) {
 export default function HistoryYearPage() {
   const navigate = useNavigate();
   const { decade } = useParams();
-  const decadeStart = useMemo(() => parseDecadeStart(decade), [decade]);
+  
+  const { decadeStart, initialYear } = useMemo(() => parseParam(decade), [decade]);
   const years = useMemo(() => Array.from({ length: 10 }, (_, i) => String(decadeStart + i)), [decadeStart]);
-  const [activeYear, setActiveYear] = useState(years[0]);
+  
+  const [activeYear, setActiveYear] = useState(initialYear);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const gradient = useMemo(() => yearToGradient(activeYear), [activeYear]);
 
-  useEffect(() => { setActiveYear(years[0]); }, [years]);
+  useEffect(() => { setActiveYear(initialYear); }, [initialYear]);
 
   useEffect(() => {
     let active = true;
@@ -69,54 +81,68 @@ export default function HistoryYearPage() {
   }, [activeYear]);
 
   return (
-    <main
-      style={{
-        background: `linear-gradient(to bottom, ${gradient.from}, ${gradient.via}, ${gradient.to})`,
-        minHeight: "calc(100vh - 64px)",
-        transition: "background 0.5s ease",
-      }}
-      className="px-4 pb-12 pt-6 sm:px-6 md:px-10"
-    >
-      <button
-        type="button"
-        onClick={() => navigate("/history-timeline")}
-        className="rounded-full bg-white/70 px-3 py-1.5 text-xs font-medium tracking-wide text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/90 sm:px-4 sm:py-2 sm:text-sm"
+    <>
+      <main
+        style={{
+          background: `linear-gradient(to bottom, ${gradient.from}, ${gradient.via}, ${gradient.to})`,
+          transition: "background 0.5s ease",
+        }}
+        className="px-4 pt-6 sm:px-6 md:px-10"
       >
-        <span className="flex items-center gap-2">
-          <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-          Change Decade
-        </span>
-      </button>
+        <Breadcrumb items={[]}>
+          <button
+            type="button"
+            onClick={() => navigate("/history-timeline")}
+            className="flex h-[26px] items-center rounded-full border border-black/10 bg-white/80 px-3 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-md transition-colors hover:bg-white/90 hover:text-black pointer-events-auto"
+          >
+            Change Decade
+          </button>
+        </Breadcrumb>
 
-      <section className="mx-auto flex w-full max-w-7xl flex-col items-center">
-        <div className="mt-16 w-full sm:mt-20 md:mt-24">
-          <YearDial years={years} activeYear={activeYear} setActiveYear={setActiveYear} />
-        </div>
-      </section>
+        <section className="mx-auto flex w-full max-w-7xl flex-col items-center">
+          <div className="mt-16 w-full sm:mt-20 md:mt-24">
+            <YearDial years={years} activeYear={activeYear} setActiveYear={setActiveYear} />
+          </div>
+        </section>
+      </main>
 
-      {loading ? (
-        <div className="py-16 text-center text-gray-400">Loading…</div>
-      ) : error ? (
-        <div className="py-16 text-center text-rose-500">{error}</div>
-      ) : (
-        <>
-          <header className="mx-auto mt-2 w-full max-w-5xl text-center">
-            <h1 className="font-serif text-5xl font-bold leading-none text-[#2f2014] sm:text-6xl md:text-7xl">
-              {activeYear}
-            </h1>
-          </header>
-          <PageContentLayout
-            breadcrumbs={[]}
-            layout={data?.layout}
-            imageCards={data?.imageCards}
-            instagramVideos={data?.instagramVideos}
-            imageCardsTitle={`${activeYear} Gallery`}
-            instagramTitle="On Instagram"
-            embedded
-            backgroundClass="bg-transparent"
-          />
-        </>
-      )}
-    </main>
+      {/* Gradient fade from colored background to white */}
+      <div
+        style={{
+          background: `linear-gradient(to bottom, ${gradient.to}, white)`,
+          transition: "background 0.5s ease",
+        }}
+        className="h-24 sm:h-32 md:h-40"
+        aria-hidden="true"
+      />
+
+      {/* Content area on clean white background */}
+      <div className="bg-white px-4 pb-12 sm:px-6 md:px-10">
+        {loading ? (
+          <div className="py-16 text-center text-gray-400">loading...</div>
+        ) : error ? (
+          <div className="py-16 text-center text-rose-500">{error}</div>
+        ) : (
+          <>
+            <header className="mx-auto mt-2 w-full max-w-5xl text-center">
+              <h1 className="font-serif text-5xl font-bold leading-none text-black sm:text-6xl md:text-7xl">
+                {activeYear}
+              </h1>
+            </header>
+            <PageContentLayout
+              breadcrumbs={[]}
+              layout={data?.layout}
+              imageCards={data?.imageCards}
+              instagramVideos={data?.instagramVideos}
+              imageCardsTitle={`${activeYear} Gallery`}
+              instagramTitle="On Instagram"
+              embedded
+              backgroundClass="bg-transparent"
+              textColorClass="text-black"
+            />
+          </>
+        )}
+      </div>
+    </>
   );
 }

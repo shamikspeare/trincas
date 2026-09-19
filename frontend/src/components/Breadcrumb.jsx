@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 
-const Breadcrumb = ({ items }) => {
+const Breadcrumb = ({ items, children }) => {
   const navigate = useNavigate();
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
@@ -27,7 +27,7 @@ const Breadcrumb = ({ items }) => {
       initial="visible"
       animate={hidden ? "hidden" : "visible"}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="sticky top-14 z-50 w-full bg-white/80 backdrop-blur-sm shadow-[0_1px_0_rgba(0,0,0,0.04)] pointer-events-auto"
+      className="sticky top-14 z-50 w-full pointer-events-none"
     >
       <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
         <button
@@ -38,20 +38,24 @@ const Breadcrumb = ({ items }) => {
           <ArrowLeft size={14} />
         </button>
 
-        <nav className="flex h-[26px] items-center flex-wrap rounded-full border border-black/10 bg-white/80 px-3 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-md pointer-events-auto">
-          {items.map((item, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && <span className="mx-2 text-gray-400">/</span>}
-              {item.link ? (
-                <Link to={item.link} className="hover:text-black transition-colors">
-                  {item.label}
-                </Link>
-              ) : (
-                <span className="text-black">{item.label}</span>
-              )}
-            </React.Fragment>
-          ))}
-        </nav>
+        {items && items.length > 0 && (
+          <nav className="flex h-[26px] items-center flex-wrap rounded-full border border-black/10 bg-white/80 px-3 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-md pointer-events-auto">
+            {items.map((item, index) => (
+              <React.Fragment key={index}>
+                {index > 0 && <span className="mx-2 text-gray-400">/</span>}
+                {item.link ? (
+                  <Link to={item.link} className="hover:text-black transition-colors">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span className="text-black">{item.label}</span>
+                )}
+              </React.Fragment>
+            ))}
+          </nav>
+        )}
+
+        {children}
       </div>
     </motion.div>
   );

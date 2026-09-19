@@ -1,39 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, ExternalLink, Loader2 } from 'lucide-react';
 import Breadcrumb from '../Breadcrumb';
-import pressImage1 from '../../assets/press/press-image1.png';
-import pressImage2 from '../../assets/press/press-image2.png';
-import pressImage3 from '../../assets/press/press-image3.png';
-import pressImage4 from '../../assets/press/press-image4.png';
-import pressImage5 from '../../assets/press/press-image5.png';
-import pressImage6 from '../../assets/press/press-image6.png';
-import pressImage7 from '../../assets/press/press-image7.png';
-import pressImage8 from '../../assets/press/press-image8.png';
-import pressImage9 from '../../assets/press/press-image9.png';
-import pressImage10 from '../../assets/press/press-image10.png';
-import pressImage11 from '../../assets/press/press-image11.png';
-import pressImage12 from '../../assets/press/press-image12.png';
-import pressImage13 from '../../assets/press/press-image13.png';
-import pressImage14 from '../../assets/press/press-image14.png';
-import pressImage15 from '../../assets/press/press-image15.png';
-import pressImage16 from '../../assets/press/press-image16.png';
-import pressImage17 from '../../assets/press/press-image17.png';
-import pressImage18 from '../../assets/press/press-image18.png';
-import pressImage19 from '../../assets/press/press-image19.png';
-
-const pressImages = [
-  pressImage1, pressImage2, pressImage3, pressImage4, pressImage5,
-  pressImage6, pressImage7, pressImage8, pressImage9, pressImage10,
-  pressImage11, pressImage12, pressImage13, pressImage14, pressImage15,
-  pressImage16, pressImage17, pressImage18, pressImage19
-];
+import { supabase } from '../../lib/supabase';
 
 const Press = () => {
-  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+  const [pressItems, setPressItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  useEffect(() => {
+    const fetchPressItems = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('press_items')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('published_date', { ascending: false });
+        
+      if (!error && data) {
+        setPressItems(data);
+      } else {
+        console.error('Failed to fetch press items:', error);
+      }
+      setLoading(false);
+    };
+
+    fetchPressItems();
+  }, []);
+
   const openModal = (index) => {
-    setSelectedImageIndex(index);
+    setSelectedItemIndex(index);
     requestAnimationFrame(() => {
       setIsAnimating(true);
     });
@@ -41,18 +38,18 @@ const Press = () => {
 
   const closeModal = () => {
     setIsAnimating(false);
-    setTimeout(() => setSelectedImageIndex(null), 300);
+    setTimeout(() => setSelectedItemIndex(null), 300);
   };
 
   useEffect(() => {
-    if (selectedImageIndex !== null) {
+    if (selectedItemIndex !== null) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
 
     const handleKeyDown = (e) => {
-      if (selectedImageIndex === null) return;
+      if (selectedItemIndex === null) return;
       if (e.key === 'Escape') closeModal();
     };
 
@@ -62,12 +59,14 @@ const Press = () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedImageIndex]);
+  }, [selectedItemIndex]);
+
+  const selectedItem = selectedItemIndex !== null ? pressItems[selectedItemIndex] : null;
 
   return (
     <main className="w-full bg-white min-h-screen grid">
-      {selectedImageIndex === null && (
-        <div className="col-start-1 row-start-1 w-full z-50 pointer-events-none">
+      {selectedItemIndex === null && (
+        <div className="col-start-1 row-start-1 w-full z-40 pointer-events-none">
           <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Press' }]} />
         </div>
       )}
@@ -78,80 +77,141 @@ const Press = () => {
           <h1 className="text-3xl font-serif tracking-wide text-gray-900">
             PRESS
           </h1>
-          <p className="mt-2 text-xs text-gray-600 mx-8 italic">A curated archive of media features, editorial highlights, and press coverage.
-Documenting our work and milestones as published across global outlets.</p>
+          <p className="mt-2 text-xs text-gray-600 mx-8 italic">
+            A curated archive of media features, editorial highlights, and press coverage.
+            Documenting our work and milestones as published across global outlets.
+          </p>
         </div>
 
-        {/* Gallery – 2 columns, wider gap, smaller cards, slight shadow */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-2 gap-6">
-          {pressImages.map((src, index) => (
-            <div
-              key={index}
-              className="relative overflow-hidden rounded-2xl aspect-[3/4] cursor-pointer bg-gray-100 shadow-sm"
-              onClick={() => openModal(index)}
-            >
-              <img
-                src={src}
-                alt={`Press coverage ${index + 1}`}
-                loading="lazy"
-                decoding="async"
-                className="absolute inset-0 w-full h-full object-cover object-top scale-110 translate-y-2 origin-top"
-              />
-
-              {/* Smooth blur+darken overlay: flush to bottom/left/right edges, strongest at bottom, fades to nothing at top with no hard edge */}
-              <div
-                className="pointer-events-none absolute inset-0 backdrop-blur-xl bg-black/60"
-                style={{
-                  maskImage:
-                    'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,0.9) 22%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0) 100%)',
-                  WebkitMaskImage:
-                    'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,0.9) 22%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0) 100%)',
-                }}
-              />
+        {/* Gallery */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 min-h-[40vh]">
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <span className="text-sm text-gray-400">loading...</span>
             </div>
-          ))}
+          ) : pressItems.length === 0 ? (
+            <div className="text-center text-sm text-gray-500 mt-10">
+              No press items available yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-6">
+              {pressItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="relative overflow-hidden rounded-2xl aspect-[3/4] cursor-pointer bg-gray-100 shadow-sm group"
+                  onClick={() => openModal(index)}
+                >
+                  {item.image_url && (
+                    <img
+                      src={item.image_url}
+                      alt={item.title || `Press coverage ${index + 1}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                    />
+                  )}
+
+                  {/* Dark blur overlay — bottom portion only, for text legibility */}
+                  <div
+                    className="pointer-events-none absolute inset-0 backdrop-blur-xl bg-black/60"
+                    style={{
+                      maskImage:
+                        'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,0.9) 22%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0) 100%)',
+                      WebkitMaskImage:
+                        'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,0.9) 22%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0) 100%)',
+                    }}
+                  />
+
+                  {/* White gradient at the very bottom edge, fading to transparent */}
+                  <div
+                    className="pointer-events-none absolute bottom-0 left-0 right-0 h-16"
+                    style={{
+                      background: 'linear-gradient(to top, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 100%)',
+                    }}
+                  />
+
+                  {/* Text Overlay */}
+                  <div className="absolute bottom-4 left-4 right-4 text-white z-10 pointer-events-none">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold opacity-80 mb-1 line-clamp-1">
+                      {item.publication}
+                    </p>
+                    <h3 className="text-sm font-medium leading-snug line-clamp-3 drop-shadow-md">
+                      {item.title}
+                    </h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Modal – mobile only */}
-        {selectedImageIndex !== null && (
+        {/* Modal – mobile only (though this style works on desktop too) */}
+        {selectedItemIndex !== null && selectedItem && (
           <div
-            className={`fixed inset-0 z-50 flex flex-col justify-between items-center pt-[74px] pb-6 px-4 bg-black/60 backdrop-blur-md transition-opacity duration-300 ${
+            className={`fixed inset-0 z-50 flex flex-col items-center pt-[74px] pb-6 px-4 bg-black/90 backdrop-blur-md transition-opacity duration-300 overflow-y-auto ${
               isAnimating ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={closeModal}
           >
             {/* Top Left Close Button - offset below navbar */}
-            <div className="w-full flex justify-start">
+            <div className="w-full flex justify-start sticky top-0 z-10">
               <button
                 onClick={closeModal}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-white shadow-md active:scale-95 transition"
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 text-white backdrop-blur-sm shadow-md hover:bg-white/30 active:scale-95 transition"
                 aria-label="Close"
               >
-                <X className="w-4 h-4 text-black" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Centered Image + Hint */}
+            {/* Centered Content */}
             <div
-              className="flex flex-col items-center justify-center my-auto"
+              className="flex flex-col items-center w-full max-w-4xl mx-auto mt-4 pb-12"
               onClick={(e) => e.stopPropagation()}
             >
-              <img
-                src={pressImages[selectedImageIndex]}
-                alt={`Press coverage ${selectedImageIndex + 1}`}
-                loading="lazy"
-                decoding="async"
-                className={`max-w-[92vw] max-h-[70vh] w-auto h-auto object-contain transition-all duration-300 ${
-                  isAnimating
-                    ? 'opacity-100 scale-100'
-                    : 'opacity-0 scale-95'
-                }`}
-              />
+              {selectedItem.image_url && (
+                <img
+                  src={selectedItem.image_url}
+                  alt={selectedItem.title}
+                  loading="lazy"
+                  decoding="async"
+                  className={`w-full max-w-[92vw] md:max-w-2xl h-auto rounded-lg shadow-2xl object-contain transition-all duration-300 ${
+                    isAnimating
+                      ? 'opacity-100 scale-100'
+                      : 'opacity-0 scale-95'
+                  }`}
+                />
+              )}
 
-              {/* Hint text */}
-              <p className="mt-3 text-[10px] leading-none text-white/80 tracking-wide">
-                pinch to zoom in/out
-              </p>
+              <div className={`mt-6 text-center text-white w-full px-4 transition-all duration-500 delay-100 ${isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                {selectedItem.publication && (
+                  <p className="text-xs uppercase tracking-widest text-white/70 font-semibold mb-2">
+                    {selectedItem.publication}
+                  </p>
+                )}
+                
+                <h2 className="text-xl md:text-2xl font-serif leading-tight">
+                  {selectedItem.title}
+                </h2>
+                
+                {selectedItem.published_date && (
+                  <p className="mt-2 text-sm text-white/50">
+                    {new Date(selectedItem.published_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                )}
+                
+                {selectedItem.link && (
+                  <a
+                    href={selectedItem.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-6 px-6 py-2.5 bg-white text-black text-sm font-medium rounded-full hover:bg-gray-200 transition-colors"
+                  >
+                    Read Full Article
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         )}

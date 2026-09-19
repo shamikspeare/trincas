@@ -18,37 +18,100 @@ import {
 
 /* ---------- Constants ---------- */
 
-const HISTORY_SECTIONS = [
-  { value: "1948", label: "1948" },
-  { value: "1955", label: "1955" },
-  { value: "1965", label: "1965" },
-  { value: "Portuguese Era", label: "Portuguese Era" },
+const currentYear = new Date().getFullYear();
+const historySubpages = [
+  { value: "/history/1948", label: "1948" },
+  { value: "/history/1949", label: "1949" },
+  ...Array.from({ length: currentYear - 1950 + 1 }, (_, i) => {
+    const y = String(1950 + i);
+    return { value: `/history/${y}`, label: y };
+  })
+];
+
+const SUBPAGES_CONFIG = {
+  dining: [
+    { value: "/dining/trincas", label: "Trincas" },
+    { value: "/dining/the-other-room", label: "The Other Room" },
+    { value: "/dining/tavern", label: "Tavern" },
+    { value: "/dining/ming-room", label: "Ming Room" },
+  ],
+  food: [
+    { value: "/food-indian", label: "Indian" },
+    { value: "/food-continental", label: "Continental" },
+    { value: "/food-chinese", label: "Chinese" },
+    { value: "/food-drinks", label: "Drinks" },
+    { value: "/food-cafe", label: "Cafe" },
+  ],
+  music: [
+    { value: "/music-schedule", label: "Trincas Music Schedule" },
+    { value: "/music-tavern-schedule", label: "Tavern Music Schedule" },
+    { value: "/music-legacy", label: "Music Legacy" },
+  ],
+  history: historySubpages,
+  pride: [
+    { value: "/pride-lgbtq", label: "LGBTQ" },
+    { value: "/pride-of-kolkata", label: "Pride of Kolkata" },
+  ]
+};
+
+const PAGES = [
+  { value: "home", label: "Home", path: "/" },
+  { value: "dining", label: "Dining", path: "/dining" },
+  { value: "food", label: "Food", path: "/food" },
+  { value: "music", label: "Music", path: "/music" },
+  { value: "history", label: "History", path: "/history" },
+  { value: "press", label: "Press", path: "/press" },
+  { value: "pride", label: "Pride", path: "/pride" },
 ];
 
 const ALLOWED_PROTOCOLS = ["http:", "https:", "mailto:", "tel:"];
 
 /* ---------- Helpers ---------- */
 
-// Convert a section label ("Portuguese Era") to its anchor ("portuguese-era")
-function sectionToAnchor(label) {
-  return label.toLowerCase().replace(/\s+/g, "-");
-}
-
 // Try to resolve an internal link's page + section from a stored href
 function parseInternalHref(href) {
   const [path, hash = ""] = href.split("#");
-  const page = path === "/" || path === "" ? "home" : path.replace(/^\//, "");
-  const match = HISTORY_SECTIONS.find((s) => sectionToAnchor(s.value) === hash);
-  return { page, section: match ? match.value : HISTORY_SECTIONS[0].value };
+  const fullPath = path === "" ? "/" : path;
+
+  let page = "home";
+  let section = "";
+
+  // Handle old history hash links (e.g. /history#1948)
+  if (fullPath === "/history" && hash) {
+    page = "history";
+    const historyValue = `/history/${hash.toLowerCase().replace(/\s+/g, "-")}`;
+    const match = SUBPAGES_CONFIG.history.find((s) => s.value === historyValue);
+    if (match) {
+      section = match.value;
+    }
+    return { page, section };
+  }
+
+  // First see if it's a subpage match directly
+  for (const [pKey, subpages] of Object.entries(SUBPAGES_CONFIG)) {
+    const match = subpages.find((s) => s.value === fullPath);
+    if (match) {
+      return { page: pKey, section: match.value };
+    }
+  }
+
+  // If not a subpage, see if it's a main page
+  const pageMatch = PAGES.find((p) => p.path === fullPath);
+  if (pageMatch) {
+    return { page: pageMatch.value, section: "" };
+  }
+
+  // Fallback
+  return { page: "home", section: "" };
 }
 
 // Build an internal href from page + section
 function buildInternalHref(page, section) {
-  let url = page === "home" ? "/" : `/${page}`;
-  if (page === "history" && section) {
-    url = `${url}#${sectionToAnchor(section)}`;
+  if (section) {
+    return section;
   }
-  return url;
+  const match = PAGES.find((p) => p.value === page);
+  return match ? match.path : "/";
 }
 
 // Prepend https:// if no scheme, then validate against a protocol whitelist.
@@ -86,7 +149,7 @@ function LinkPickerDialog({
   const [linkType, setLinkType] = useState("internal");
   const [externalUrl, setExternalUrl] = useState("");
   const [page, setPage] = useState("home");
-  const [section, setSection] = useState(HISTORY_SECTIONS[0].value);
+  const [section, setSection] = useState("");
   const [error, setError] = useState("");
 
   // Sync state whenever the dialog is opened
@@ -107,13 +170,13 @@ function LinkPickerDialog({
         setLinkType("external");
         setExternalUrl(initialUrl);
         setPage("home");
-        setSection(HISTORY_SECTIONS[0].value);
+        setSection("");
       }
     } else {
       setLinkType("internal");
       setExternalUrl("");
       setPage("home");
-      setSection(HISTORY_SECTIONS[0].value);
+      setSection("");
     }
   }, [isOpen, initialText, initialUrl]);
 
@@ -231,29 +294,31 @@ function LinkPickerDialog({
               <select
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                 value={page}
-                onChange={(e) => setPage(e.target.value)}
+                onChange={(e) => {
+                  setPage(e.target.value);
+                  setSection("");
+                }}
               >
-                <option value="home">Home</option>
-                <option value="dining">Dining</option>
-                <option value="food">Food</option>
-                <option value="music">Music</option>
-                <option value="history">History</option>
-                <option value="gallery">Gallery</option>
-                <option value="contact">Contact</option>
+                {PAGES.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {page === "history" && (
+            {SUBPAGES_CONFIG[page] && (
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-700">
-                  Section
+                  Subpage
                 </label>
                 <select
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                   value={section}
                   onChange={(e) => setSection(e.target.value)}
                 >
-                  {HISTORY_SECTIONS.map((s) => (
+                  <option value="">Main Page</option>
+                  {SUBPAGES_CONFIG[page].map((s) => (
                     <option key={s.value} value={s.value}>
                       {s.label}
                     </option>

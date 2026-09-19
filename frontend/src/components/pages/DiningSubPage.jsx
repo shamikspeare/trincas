@@ -71,7 +71,7 @@ export default function DiningSubPage() {
   const title = metadata.heading || room?.name || (slug ? slug.replace(/-/g, ' ') : 'Dining');
 
   if (loading) {
-    return <main className="w-full bg-white min-h-[60vh] flex items-center justify-center"><p className="text-gray-500">Loading…</p></main>;
+    return <main className="w-full bg-white min-h-[60vh] flex items-center justify-center"><p className="text-gray-400">loading...</p></main>;
   }
 
   if (error) {

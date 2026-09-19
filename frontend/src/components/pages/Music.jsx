@@ -32,8 +32,8 @@ export default function Music() {
 
   if (loading) {
     return (
-      <main className="min-h-[60vh] bg-white flex items-center justify-center text-gray-500">
-        Loading music…
+      <main className="min-h-[60vh] bg-white flex items-center justify-center text-gray-400">
+        loading...
       </main>
     );
   }

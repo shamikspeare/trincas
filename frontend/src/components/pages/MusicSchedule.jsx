@@ -31,8 +31,8 @@ const MusicSchedule = () => {
 
   if (loading) {
     return (
-      <main className="min-h-[60vh] bg-white flex items-center justify-center text-gray-500">
-        Loading…
+      <main className="min-h-[60vh] bg-white flex items-center justify-center text-gray-400">
+        loading...
       </main>
     );
   }
@@ -65,7 +65,7 @@ const MusicSchedule = () => {
         layout={data?.layout}
         imageCards={data?.imageCards}
         instagramVideos={data?.instagramVideos}
-        imageCardsTitle="Schedule Highlights"
+        imageCardsTitle="Timeline"
         instagramTitle="On Instagram"
       />
 

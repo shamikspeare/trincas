@@ -61,11 +61,10 @@ const FeaturedCard = ({ card }) => {
   );
 };
 
-const PageLoading = ({ title }) => (
+const PageLoading = () => (
   <main className="min-h-[60vh] bg-white flex items-center justify-center">
-    <div className="flex flex-col items-center gap-3 text-gray-600">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-gray-900" />
-      <p className="text-sm">Loading {title}…</p>
+    <div className="flex flex-col items-center gap-3 text-gray-400">
+      <p className="text-sm">loading...</p>
     </div>
   </main>
 );
@@ -151,7 +150,7 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
     };
   }, [selectedMenuOpen]);
 
-  if (loading) return <PageLoading title={displayTitle} />;
+  if (loading) return <PageLoading />;
   if (error) return <PageError title={displayTitle} onRetry={load} />;
 
   const menuImages = data?.menuImages?.length

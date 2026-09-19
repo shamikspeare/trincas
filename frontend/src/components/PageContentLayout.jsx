@@ -72,6 +72,7 @@ export default function PageContentLayout({
   instagramTitle = "On Instagram",
   embedded = false,
   backgroundClass = "bg-white",
+  textColorClass = "text-[#514638]",
 }) {
   const sanitizedBody = sanitizeHtml(layout?.body || "");
 
@@ -110,7 +111,7 @@ export default function PageContentLayout({
           {sanitizedBody ? (
             <motion.section
               variants={sectionVariants}
-              className="mx-auto mt-6 max-w-4xl space-y-4 text-base leading-relaxed text-[#514638] sm:text-lg [&_a]:text-indigo-600 [&_a]:underline"
+              className={`mx-auto mt-6 max-w-4xl space-y-4 text-base leading-relaxed ${textColorClass} sm:text-lg [&_a]:text-indigo-600 [&_a]:underline`}
               dangerouslySetInnerHTML={{ __html: sanitizedBody }}
             />
           ) : null}

@@ -112,7 +112,9 @@ const Food = () => {
     <main className="w-full bg-white min-h-[60vh] flex flex-col">
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Food & Beverages' }]} />
       <div className="w-full flex flex-col pt-6 pb-12">
-        {loading ? null : (
+        {loading ? (
+          <div className="py-12 text-center text-gray-400">loading...</div>
+        ) : (
           frames.map((frame, index) => (
             <FrameCard
               key={frame.heading}
