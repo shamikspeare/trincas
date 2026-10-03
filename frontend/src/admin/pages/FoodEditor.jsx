@@ -12,7 +12,7 @@ import {
 import { supabase } from "../../lib/supabase";
 import ImageProcessingModal from "../components/ImageProcessingModal";
 import ImageUploadSummaryMessage from "../components/ImageUploadSummaryMessage";
-import { IMAGE_ACCEPT, getImageProcessingSummary, processImage } from "../utils/processImage";
+import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
 import PageLayoutEditor from "../components/PageLayoutEditor";
 import { getFoodPageKey } from "../../lib/pageLayouts";
 
@@ -276,6 +276,11 @@ function CuisinePageEditor({ cuisine, notify }) {
       pageKey={getFoodPageKey(cuisine.slug)}
       title={`${cuisine.name} cuisine page`}
       notify={notify}
+      imageCardTitle="Feature dishes"
+      imageCardItemLabel="Feature dish"
+      addImageCardLabel="Add feature dish"
+      imageCardNameLabel="Dish name"
+      imageCardNamePlaceholder="Enter the dish name"
     />
   );
 }
@@ -380,7 +385,7 @@ export default function FoodEditor() {
         <section className="mt-10">
           <h2 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Cuisine Pages</h2>
           <p className="mt-1 text-lg text-gray-500 sm:text-xl">
-            Manage the menu cards and Instagram videos for each cuisine page.
+            Manage feature dishes and Instagram reels for each cuisine page.
           </p>
 
           <div className="mt-4 space-y-3">

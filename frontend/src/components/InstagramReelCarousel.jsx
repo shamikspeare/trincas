@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import InstagramReelEmbed from "./InstagramReelEmbed";
-import { normalizeInstagramUrl } from "../lib/pageLayouts";
+import { ExternalLink } from "lucide-react";
+import { getInstagramEmbedUrl, normalizeInstagramUrl } from "../lib/pageLayouts";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 16 },
@@ -20,8 +20,15 @@ function SectionHeading({ children }) {
 
 export default function InstagramReelCarousel({ videos, title }) {
   const validVideos = videos
-    .map((video) => ({ ...video, canonicalUrl: normalizeInstagramUrl(video.instagram_url) }))
-    .filter((video) => video.canonicalUrl);
+    .map((video) => {
+      const canonicalUrl = normalizeInstagramUrl(video.instagram_url);
+      return {
+        ...video,
+        canonicalUrl,
+        embedUrl: canonicalUrl ? getInstagramEmbedUrl(canonicalUrl) : null,
+      };
+    })
+    .filter((video) => video.canonicalUrl && video.embedUrl);
     
   if (!validVideos.length) return null;
 
@@ -30,13 +37,31 @@ export default function InstagramReelCarousel({ videos, title }) {
       <SectionHeading>{title}</SectionHeading>
       <div className="mt-6 -mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
         <div className="flex gap-4 snap-x snap-mandatory">
-          {validVideos.map((video) => (
-            <div
-              key={video.id}
-              className="snap-start shrink-0 w-[280px] sm:w-[320px]"
-            >
-              <InstagramReelEmbed url={video.canonicalUrl} />
-            </div>
+          {validVideos.map((video, index) => (
+            <article key={video.id} className="snap-start shrink-0 w-[78%] sm:w-[46%] lg:w-[23%]">
+              <div className="overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-sm">
+                <div className="relative aspect-[9/16] bg-gray-100">
+                  <iframe
+                    src={video.embedUrl}
+                    title={`Instagram video ${index + 1}`}
+                    className="absolute inset-0 h-full w-full border-0"
+                    loading="lazy"
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                </div>
+                <a
+                  href={video.canonicalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-950"
+                >
+                  Open on Instagram
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                </a>
+              </div>
+            </article>
           ))}
         </div>
       </div>

@@ -18,6 +18,7 @@ import HistoryYearPage from "./components/pages/HistoryYearPage";
 import Press from "./components/pages/Press";
 import Pride from "./components/pages/Pride";
 import PrideLgbtqSubPage from "./components/pages/PrideLgbtqSubPage";
+import Book from "./components/pages/Book";
 
 import Dashboard from "./admin/Dashboard";
 import AdminFood from "./admin/pages/FoodEditor";
@@ -25,11 +26,17 @@ import AdminDining from "./admin/pages/DiningEditor";
 import AdminHistory from "./admin/pages/HistoryEditor";
 import AdminMusic from "./admin/pages/MusicEditor";
 import AdminPress from "./admin/pages/PressEditor";
+import AdminBook from "./admin/pages/BookEditor";
+import { AuthProvider } from "./auth/AuthProvider";
+import ProtectedRoute from "./auth/ProtectedRoute";
+import PublicOnlyRoute from "./auth/PublicOnlyRoute";
+import LoginPage from "./auth/LoginPage";
+import IdleSessionGuard from "./auth/IdleSessionGuard";
 
 function AppLayout() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith("/admin");
-  const isAdminIndex = location.pathname === "/admin";
+  const isAdminRoute = location.pathname.startsWith("/admin") || location.pathname === "/dashboard";
+  const isAdminIndex = location.pathname === "/admin" || location.pathname === "/dashboard";
 
   return (
     <div
@@ -92,13 +99,18 @@ function AppLayout() {
           <Route path="/press" element={<Press />} />
           <Route path="/pride" element={<Pride />} />
           <Route path="/pride-lgbtq" element={<PrideLgbtqSubPage />} />
+          <Route path="/book" element={<Book />} />
 
-          <Route path="/admin" element={<Dashboard />} />
-          <Route path="/admin/food" element={<AdminFood />} />
-          <Route path="/admin/dining" element={<AdminDining />} />
-          <Route path="/admin/history" element={<AdminHistory />} />
-          <Route path="/admin/music" element={<AdminMusic />} />
-          <Route path="/admin/press" element={<AdminPress />} />
+          <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/admin/food" element={<ProtectedRoute><AdminFood /></ProtectedRoute>} />
+          <Route path="/admin/dining" element={<ProtectedRoute><AdminDining /></ProtectedRoute>} />
+          <Route path="/admin/history" element={<ProtectedRoute><AdminHistory /></ProtectedRoute>} />
+          <Route path="/admin/music" element={<ProtectedRoute><AdminMusic /></ProtectedRoute>} />
+          <Route path="/admin/press" element={<ProtectedRoute><AdminPress /></ProtectedRoute>} />
+          <Route path="/admin/book" element={<ProtectedRoute><AdminBook /></ProtectedRoute>} />
         </Routes>
       </div>
     </div>
@@ -108,8 +120,11 @@ function AppLayout() {
 function App() {
   return (
     <Router>
-      <ScrollToTop />
-      <AppLayout />
+      <AuthProvider>
+        <ScrollToTop />
+        <IdleSessionGuard />
+        <AppLayout />
+      </AuthProvider>
     </Router>
   );
 }

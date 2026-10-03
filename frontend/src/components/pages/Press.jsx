@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ExternalLink, Loader2 } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import Breadcrumb from '../Breadcrumb';
 import { supabase } from '../../lib/supabase';
 

@@ -1,10 +1,10 @@
 // src/pages/FoodSubPage.jsx
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Expand, X, ImageOff, RefreshCw } from "lucide-react";
+import { motion } from "framer-motion";
+import { ImageOff, RefreshCw } from "lucide-react";
 import Breadcrumb from "../Breadcrumb";
-import PageContentLayout from "../PageContentLayout";
+import InstagramReelCarousel from "../InstagramReelCarousel";
 import { fetchPageLayout, getFoodPageKey } from "../../lib/pageLayouts";
 
 const pageVariants = {
@@ -34,8 +34,8 @@ const SectionHeading = ({ title, subtitle }) => (
   </div>
 );
 
-// Card: image + mandatory heading below it. The heading is stored in alt_text
-// and is used for both <img alt> and visible caption.
+// Card: image + CMS dish name below it. The name is stored in alt_text so it
+// remains useful as both the image's accessible name and visible caption.
 const FeaturedCard = ({ card }) => {
   const altText = card.alt_text || card.title || card.name || "";
   return (
@@ -101,9 +101,6 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [selectedMenuOpen, setSelectedMenuOpen] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-
   const load = useCallback(async () => {
     if (!slug) return;
     setLoading(true);
@@ -121,45 +118,9 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
     load();
   }, [load]);
 
-  const openModal = () => {
-    setSelectedMenuOpen(true);
-    requestAnimationFrame(() => setIsAnimating(true));
-  };
-
-  const closeModal = () => {
-    setIsAnimating(false);
-    setTimeout(() => setSelectedMenuOpen(false), 300);
-  };
-
-  useEffect(() => {
-    if (selectedMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    const handleKeyDown = (e) => {
-      if (!selectedMenuOpen) return;
-      if (e.key === "Escape") closeModal();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [selectedMenuOpen]);
-
   if (loading) return <PageLoading />;
   if (error) return <PageError title={displayTitle} onRetry={load} />;
 
-  const menuImages = data?.menuImages?.length
-    ? data.menuImages
-    : data?.layout?.lead_image_url
-      ? [data.layout.lead_image_url]
-      : [];
-  const previewMenuImage = menuImages[0] || null;
-  const hasImage = Boolean(previewMenuImage);
   const cards = data?.imageCards || [];
 
   return (
@@ -178,41 +139,8 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
         initial="hidden"
         animate="visible"
       >
-        {/* Menu preview block */}
-        <motion.section variants={cardVariants} className="mt-2 w-full">
-          {hasImage ? (
-            <button
-              type="button"
-              onClick={openModal}
-              className="group relative block w-full text-left overflow-hidden rounded-lg"
-              aria-label={`Expand ${displayTitle} menu`}
-            >
-              <img
-                src={previewMenuImage}
-                alt={`${displayTitle} menu cover`}
-                className="h-auto w-full object-cover"
-                loading="eager"
-                decoding="async"
-              />
-              <span className="absolute inset-0 flex items-center justify-center">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/40 px-5 py-2.5 text-sm font-bold text-black shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-transform group-active:scale-95">
-                  <Expand className="h-4 w-4" />
-                  <span>Expand</span>
-                </span>
-              </span>
-            </button>
-          ) : (
-            <div className="flex h-56 w-full items-center justify-center bg-white text-gray-500">
-              <div className="flex flex-col items-center gap-2 text-sm">
-                <ImageOff className="h-6 w-6 opacity-60" />
-                Menu image coming soon
-              </div>
-            </div>
-          )}
-        </motion.section>
-
         {/* Featured dishes */}
-        <motion.section variants={cardVariants} className="mt-10 sm:mt-12">
+        <motion.section variants={cardVariants} className="mt-2 sm:mt-4">
           <SectionHeading title="Featured Dishes" subtitle="Guest favourites" />
 
           {cards.length === 0 ? (
@@ -228,55 +156,8 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
           )}
         </motion.section>
 
-        {data?.instagramVideos?.length ? (
-          <PageContentLayout instagramVideos={data.instagramVideos} instagramTitle="On Instagram" />
-        ) : null}
+        <InstagramReelCarousel videos={data?.instagramVideos || []} title="On Instagram" />
       </motion.div>
-
-      {/* Fullscreen menu modal */}
-      <AnimatePresence>
-        {selectedMenuOpen && hasImage ? (
-          <div
-            className={`fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md transition-opacity duration-300 ${
-              isAnimating ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <div className="absolute top-0 left-0 right-0 z-10 flex justify-start p-4 pt-[74px]">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 shadow-md active:scale-95 transition"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            <div
-              className="flex-1 overflow-y-auto w-full pt-[120px] pb-10 px-4 flex flex-col items-center"
-              onClick={closeModal}
-            >
-              <div
-                className={`flex w-full max-w-5xl flex-col items-center justify-start gap-4 transition-all duration-300 ${
-                  isAnimating ? "opacity-100 scale-100 y-0" : "opacity-0 scale-95 translate-y-4"
-                }`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {menuImages.map((imageUrl, index) => (
-                  <img
-                    key={`${imageUrl}-${index}`}
-                    src={imageUrl}
-                    alt={`${displayTitle} menu page ${index + 1}`}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    decoding="async"
-                    className="w-full h-auto object-contain rounded shadow-2xl"
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </AnimatePresence>
     </main>
   );
 }

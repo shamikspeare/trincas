@@ -84,6 +84,39 @@ const FrameCard = ({ img, heading, index, link }) => (
   </motion.section>
 );
 
+const BookCard = ({ index }) => (
+  <motion.section
+    className="w-full"
+    custom={index}
+    initial="hidden"
+    animate="visible"
+    variants={cardVariants}
+  >
+    <Link
+      to="/book"
+      className="mx-auto flex flex-col items-center transition-opacity hover:opacity-90"
+      style={{ maxWidth: 600, padding: '0.25rem 1.25rem 1.5rem 1.25rem' }}
+    >
+      <div
+        className="aspect-[4/3] w-full max-w-130 rounded-3xl bg-[#767e90]"
+        aria-hidden="true"
+      />
+
+      <h2
+        className="mt-3 text-center text-black font-medium tracking-[0.02em] sm:mt-4"
+        style={{
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: 'clamp(2rem, 5vw, 3rem)',
+        }}
+      >
+        Books
+      </h2>
+
+      <OrnamentalDivider />
+    </Link>
+  </motion.section>
+);
+
 const Home = () => {
   return (
     <main className="w-full bg-white pt-12">
@@ -95,6 +128,7 @@ const Home = () => {
             {...frame}
           />
         ))}
+        <BookCard index={frames.length} />
       </div>
     </main>
   );

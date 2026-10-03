@@ -135,7 +135,7 @@ export default function HistoryYearPage() {
               imageCards={data?.imageCards}
               instagramVideos={data?.instagramVideos}
               imageCardsTitle={`${activeYear} Gallery`}
-              instagramTitle="On Instagram"
+              instagramTitle="Featured reels"
               embedded
               backgroundClass="bg-transparent"
               textColorClass="text-black"

@@ -104,7 +104,7 @@ const PrideCard = ({ img, heading, link, index, description, disabled = false })
 export default function Pride() {
   return (
     <main
-      className="w-full pt-12 pb-8"
+      className="w-full pb-8"
       style={{
         background:
           'linear-gradient(135deg, ' +
@@ -119,7 +119,7 @@ export default function Pride() {
     >
       <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Pride' }]} />
 
-      <div className="w-full flex flex-col">
+      <div className="w-full flex flex-col pt-4">
         <PrideCard
           img={prideLgbtqImg}
           heading="LGBTQ"

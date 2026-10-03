@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GripVertical, ImagePlus, Play, Loader2, Save, Trash2 } from "lucide-react";
+import { GripVertical, ImagePlus, Pencil, Play, Loader2, Save, Trash2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { fetchPageLayout, normalizeInstagramUrl } from "../../lib/pageLayouts";
 import { sanitizeHtml } from "../../lib/sanitize";
@@ -59,11 +59,21 @@ function reorder(items, from, to) {
   return next;
 }
 
-export default function PageLayoutEditor({ pageKey, title, notify }) {
+export default function PageLayoutEditor({
+  pageKey,
+  title,
+  notify,
+  imageCardTitle,
+  imageCardItemLabel,
+  addImageCardLabel,
+  imageCardNameLabel,
+  imageCardNamePlaceholder,
+}) {
   const [layout, setLayout] = useState(null);
   const [imageCards, setImageCards] = useState([]);
   const [instagramVideos, setInstagramVideos] = useState([]);
   const [draft, setDraft] = useState({ heading: "", body: "" });
+  const [isTextEditing, setIsTextEditing] = useState(true);
   const [newInstagramUrl, setNewInstagramUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -85,6 +95,7 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
       setImageCards(data.imageCards);
       setInstagramVideos(data.instagramVideos);
       setDraft({ heading: data.layout?.heading || "", body: data.layout?.body || "" });
+      setIsTextEditing(!(data.layout?.heading || data.layout?.body));
     } catch (err) {
       setError(err.message || "Failed to load page content");
     } finally {
@@ -101,18 +112,21 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
       if (updateError) throw updateError;
       setLayout((current) => ({ ...current, ...fields }));
       if (successMessage) notify?.("success", successMessage);
+      return true;
     } catch (err) {
       notify?.("error", err.message || "Failed to save page content");
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
   async function saveText() {
-    await saveFields(
+    const saved = await saveFields(
       { heading: draft.heading.trim() || null, body: sanitizeHtml(draft.body) || null },
       "Page content saved"
     );
+    if (saved) setIsTextEditing(false);
   }
 
   function openCrop(file, target) {
@@ -219,10 +233,10 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
       });
       if (insertError) throw insertError;
       setNewInstagramUrl("");
-      notify?.("success", "Instagram video added");
+      notify?.("success", "Instagram reel added");
       await load();
     } catch (err) {
-      notify?.("error", err.message || "Failed to add Instagram video");
+      notify?.("error", err.message || "Failed to add Instagram reel");
     } finally {
       setSaving(false);
     }
@@ -236,7 +250,7 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
     }
     if (instagramUrl === video.instagram_url) return;
     const { error: updateError } = await supabase.from("page_instagram_videos").update({ instagram_url: instagramUrl }).eq("id", video.id);
-    if (updateError) notify?.("error", updateError.message || "Failed to update Instagram video");
+    if (updateError) notify?.("error", updateError.message || "Failed to update Instagram reel");
     else await load();
   }
 
@@ -245,10 +259,10 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
     try {
       const { error: deleteError } = await supabase.from("page_instagram_videos").delete().eq("id", id);
       if (deleteError) throw deleteError;
-      notify?.("success", "Instagram video removed");
+      notify?.("success", "Instagram reel removed");
       await load();
     } catch (err) {
-      notify?.("error", err.message || "Failed to remove Instagram video");
+      notify?.("error", err.message || "Failed to remove Instagram reel");
     } finally {
       setSaving(false);
     }
@@ -266,9 +280,11 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
   const isMusicPage = Boolean(pageKey?.startsWith("music"));
   const hideHeadingTextLead = isFoodPage || isMusicPage;
 
-  const cardSectionTitle = isFoodPage ? "Menu cards" : isMusicPage ? "Schedule cards" : "Image cards";
-  const cardItemLabel = isFoodPage ? "Menu card" : isMusicPage ? "Schedule card" : "Image card";
-  const addCardLabel = isFoodPage ? "Add menu card" : isMusicPage ? "Add schedule card" : "Add image card";
+  const cardSectionTitle = imageCardTitle || (isFoodPage ? "Feature dishes" : isMusicPage ? "Schedule cards" : "Image cards");
+  const cardItemLabel = imageCardItemLabel || (isFoodPage ? "Feature dish" : isMusicPage ? "Schedule card" : "Image card");
+  const addCardLabel = addImageCardLabel || (isFoodPage ? "Add feature dish" : isMusicPage ? "Add schedule card" : "Add image card");
+  const cardNameLabel = imageCardNameLabel || (isFoodPage ? "Dish name" : "Card title");
+  const cardNamePlaceholder = imageCardNamePlaceholder || (isFoodPage ? "Enter the dish name" : "Enter a card title (optional)");
 
   if (loading) return <div className="flex items-center gap-2 py-6 text-sm text-gray-400"><Loader2 className="h-4 w-4 animate-spin" />Loading {title}…</div>;
   if (error) return <div className="rounded-lg border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">{error}<button onClick={load} className="ml-3 font-medium underline">Retry</button></div>;
@@ -283,15 +299,25 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
       {!hideHeadingTextLead && (
         <section>
           <h4 className="text-lg font-semibold text-gray-900">Heading and paragraphs</h4>
-          <input value={draft.heading} onChange={(event) => setDraft((current) => ({ ...current, heading: event.target.value }))} placeholder="Heading (optional)" className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
-          <RichTextEditor
-            value={draft.body}
-            onChange={(html) => setDraft((current) => ({ ...current, body: html }))}
-            placeholder="Type your content here..."
-          />
-          <button type="button" onClick={saveText} disabled={saving} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save text
-          </button>
+          {isTextEditing ? (
+            <>
+              <input value={draft.heading} onChange={(event) => setDraft((current) => ({ ...current, heading: event.target.value }))} placeholder="Heading (optional)" className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
+              <RichTextEditor
+                value={draft.body}
+                onChange={(html) => setDraft((current) => ({ ...current, body: html }))}
+                placeholder="Type your content here..."
+              />
+              <button type="button" onClick={saveText} disabled={saving} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save text
+              </button>
+            </>
+          ) : (
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              {layout?.heading ? <p className="font-medium text-gray-900">{layout.heading}</p> : null}
+              {layout?.body ? <div className="prose prose-sm mt-2 max-w-none text-gray-700 [&_a]:text-indigo-600 [&_a]:underline" dangerouslySetInnerHTML={{ __html: sanitizeHtml(layout.body) }} /> : <p className="text-sm text-gray-500">No text saved.</p>}
+              <button type="button" onClick={() => setIsTextEditing(true)} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"><Pencil className="h-4 w-4" />Edit text</button>
+            </div>
+          )}
         </section>
       )}
 
@@ -310,7 +336,8 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
             <div key={card.id} draggable onDragStart={() => setDragging({ type: "image", index })} onDragOver={(event) => event.preventDefault()} onDrop={() => handleImageDrop(index)} className="rounded-xl border border-gray-200 p-3">
               <GripVertical className="mb-2 h-4 w-4 cursor-grab text-gray-300" />
               <ImageSlot src={card.image_url} label={cardItemLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card", id: card.id })} onRemove={() => removeImageCard(card.id)} />
-              <input defaultValue={card.alt_text || ""} onBlur={(event) => updateImageAlt(card, event.target.value)} placeholder="Alt text (optional)" className="mt-3 w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
+              <label className="mt-3 block text-xs font-medium text-gray-600" htmlFor={`image-card-name-${card.id}`}>{cardNameLabel}</label>
+              <input id={`image-card-name-${card.id}`} defaultValue={card.alt_text || ""} onBlur={(event) => updateImageAlt(card, event.target.value)} placeholder={cardNamePlaceholder} className="mt-1 w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
             </div>
           ))}
           <ImageSlot src={null} label={addCardLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card-add" })} />
@@ -318,18 +345,18 @@ export default function PageLayoutEditor({ pageKey, title, notify }) {
       </section>
 
       <section>
-        <h4 className="text-lg font-semibold text-gray-900">Instagram videos</h4>
-        <p className="mt-1 text-sm text-gray-500">Cards embed and play the reel directly on the page.</p>
+        <h4 className="text-lg font-semibold text-gray-900">Instagram reels</h4>
+        <p className="mt-1 text-sm text-gray-500">Paste a reel link. Its Instagram preview plays directly on the public page.</p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input value={newInstagramUrl} onChange={(event) => setNewInstagramUrl(event.target.value)} placeholder="https://www.instagram.com/reel/..." className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
-          <button type="button" onClick={addInstagramVideo} disabled={saving} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Play className="h-4 w-4" />Add video</button>
+          <button type="button" onClick={addInstagramVideo} disabled={saving} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Play className="h-4 w-4" />Add reel</button>
         </div>
         <div className="mt-4 space-y-2">
           {instagramVideos.map((video, index) => (
             <div key={video.id} draggable onDragStart={() => setDragging({ type: "instagram", index })} onDragOver={(event) => event.preventDefault()} onDrop={() => handleInstagramDrop(index)} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
               <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-gray-300" />
               <input defaultValue={video.instagram_url} onBlur={(event) => updateInstagramVideo(video, event.target.value)} className="min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
-              <button type="button" onClick={() => removeInstagramVideo(video.id)} disabled={saving} className="rounded-md p-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-50" aria-label="Remove Instagram video"><Trash2 className="h-4 w-4" /></button>
+              <button type="button" onClick={() => removeInstagramVideo(video.id)} disabled={saving} className="rounded-md p-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-50" aria-label="Remove Instagram reel"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
         </div>

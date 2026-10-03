@@ -18,15 +18,14 @@ import {
 
 /* ---------- Constants ---------- */
 
-const currentYear = new Date().getFullYear();
-const historySubpages = [
-  { value: "/history/1948", label: "1948" },
-  { value: "/history/1949", label: "1949" },
-  ...Array.from({ length: currentYear - 1950 + 1 }, (_, i) => {
-    const y = String(1950 + i);
-    return { value: `/history/${y}`, label: y };
-  })
-];
+const currentDecade = Math.floor(new Date().getFullYear() / 10) * 10;
+const historySubpages = Array.from(
+  { length: Math.floor((currentDecade - 1950) / 10) + 1 },
+  (_, index) => {
+    const decade = `${1950 + index * 10}s`;
+    return { value: `/history-timeline/${decade}`, label: decade };
+  }
+);
 
 const SUBPAGES_CONFIG = {
   dining: [
@@ -36,11 +35,11 @@ const SUBPAGES_CONFIG = {
     { value: "/dining/ming-room", label: "Ming Room" },
   ],
   food: [
-    { value: "/food-indian", label: "Indian" },
-    { value: "/food-continental", label: "Continental" },
-    { value: "/food-chinese", label: "Chinese" },
-    { value: "/food-drinks", label: "Drinks" },
-    { value: "/food-cafe", label: "Cafe" },
+    { value: "/food/indian", label: "Indian" },
+    { value: "/food/continental", label: "Continental" },
+    { value: "/food/chinese", label: "Chinese" },
+    { value: "/food/drinks", label: "Drinks" },
+    { value: "/food/cafe", label: "Cafe" },
   ],
   music: [
     { value: "/music-schedule", label: "Trincas Music Schedule" },
@@ -50,7 +49,6 @@ const SUBPAGES_CONFIG = {
   history: historySubpages,
   pride: [
     { value: "/pride-lgbtq", label: "LGBTQ" },
-    { value: "/pride-of-kolkata", label: "Pride of Kolkata" },
   ]
 };
 
@@ -62,6 +60,7 @@ const PAGES = [
   { value: "history", label: "History", path: "/history" },
   { value: "press", label: "Press", path: "/press" },
   { value: "pride", label: "Pride", path: "/pride" },
+  { value: "book", label: "Books", path: "/book" },
 ];
 
 const ALLOWED_PROTOCOLS = ["http:", "https:", "mailto:", "tel:"];
@@ -79,7 +78,7 @@ function parseInternalHref(href) {
   // Handle old history hash links (e.g. /history#1948)
   if (fullPath === "/history" && hash) {
     page = "history";
-    const historyValue = `/history/${hash.toLowerCase().replace(/\s+/g, "-")}`;
+    const historyValue = `/history-timeline/${hash.toLowerCase().replace(/\s+/g, "-")}`;
     const match = SUBPAGES_CONFIG.history.find((s) => s.value === historyValue);
     if (match) {
       section = match.value;
@@ -227,13 +226,14 @@ function LinkPickerDialog({
         {/* Link text */}
         <div className="mb-3">
           <label className="mb-1 block text-xs font-medium text-gray-700">
-            Link Text
+            {isEditing ? "Link Text" : "Selected Text"}
           </label>
           <input
             type="text"
-            autoFocus
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-            placeholder="Text to display"
+            autoFocus={isEditing}
+            readOnly={!isEditing}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none read-only:bg-gray-50 read-only:text-gray-600"
+            placeholder="Select text in the editor first"
             value={linkText}
             onChange={(e) => {
               setLinkText(e.target.value);
@@ -372,6 +372,7 @@ function LinkPickerDialog({
 
 const MenuBar = ({ editor }) => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkSelectionError, setLinkSelectionError] = useState("");
   const [dialogData, setDialogData] = useState({
     initialText: "",
     initialUrl: "",
@@ -398,6 +399,10 @@ const MenuBar = ({ editor }) => {
     } else {
       const { from, to } = editor.state.selection;
       const hasSelection = from !== to;
+      if (!hasSelection) {
+        setLinkSelectionError("Select text before adding a link.");
+        return;
+      }
       const selectedText = hasSelection
         ? editor.state.doc.textBetween(from, to, " ")
         : "";
@@ -409,6 +414,7 @@ const MenuBar = ({ editor }) => {
         range: hasSelection ? { from, to } : null,
       });
     }
+    setLinkSelectionError("");
     setLinkDialogOpen(true);
   };
 
@@ -531,6 +537,7 @@ const MenuBar = ({ editor }) => {
 
         <button
           type="button"
+          onMouseDown={(event) => event.preventDefault()}
           onClick={openLinkDialog}
           className={`rounded-md p-1.5 ${editor.isActive("link")
             ? "bg-indigo-100 text-indigo-700"
@@ -539,6 +546,7 @@ const MenuBar = ({ editor }) => {
         >
           <Link2 className="h-4 w-4" />
         </button>
+        {linkSelectionError ? <span className="ml-1 text-xs text-rose-600">{linkSelectionError}</span> : null}
 
         <div className="mx-1 h-5 w-px bg-gray-300"></div>
 

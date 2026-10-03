@@ -5,8 +5,8 @@ import PageLayoutEditor from "../components/PageLayoutEditor";
 import { MUSIC_SCHEDULE_PAGE_KEY, MUSIC_TAVERN_SCHEDULE_PAGE_KEY } from "../../lib/pageLayouts";
 
 const MUSIC_PAGES = [
-  { key: MUSIC_SCHEDULE_PAGE_KEY, title: "Music Schedule", desc: "Manage the content shown on the Music Schedule page." },
-  { key: MUSIC_TAVERN_SCHEDULE_PAGE_KEY, title: "Tavern Schedule", desc: "Manage the content shown on the Tavern Music Schedule page." },
+  { key: MUSIC_SCHEDULE_PAGE_KEY, title: "Music Schedule", desc: "Manage timeline cards and embedded Instagram reels for the Music Schedule page." },
+  { key: MUSIC_TAVERN_SCHEDULE_PAGE_KEY, title: "Tavern Schedule", desc: "Manage timeline cards and embedded Instagram reels for the Tavern Music Schedule page." },
 ];
 
 function Toast({ toast }) {
@@ -65,7 +65,16 @@ export default function MusicEditor() {
       <div className="mt-8">
         <h2 className="mb-2 text-xl font-medium text-gray-900">{activePage.title}</h2>
         <p className="mb-6 text-sm text-gray-500">{activePage.desc}</p>
-        <PageLayoutEditor pageKey={activePage.key} title={activePage.title} notify={notify} />
+        <PageLayoutEditor
+          pageKey={activePage.key}
+          title={activePage.title}
+          notify={notify}
+          imageCardTitle="Timeline cards"
+          imageCardItemLabel="Timeline card"
+          addImageCardLabel="Add timeline card"
+          imageCardNameLabel="Timeline card name"
+          imageCardNamePlaceholder="e.g. Friday, 10 October"
+        />
       </div>
     </div>
   );

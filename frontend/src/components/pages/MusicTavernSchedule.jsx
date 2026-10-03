@@ -34,7 +34,7 @@ export default function MusicTavernSchedule() {
         imageCards={data?.imageCards}
         instagramVideos={data?.instagramVideos}
         imageCardsTitle="Timeline"
-        instagramTitle="On Instagram"
+        instagramTitle="Featured reels"
       />
       <Footer />
     </main>

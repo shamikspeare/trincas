@@ -1,5 +1,5 @@
 // src/admin/Dashboard.jsx
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Armchair,
@@ -7,6 +7,7 @@ import {
   Music2,
   Landmark,
   Newspaper,
+  BookOpen,
   Rainbow,
   Star,
   ArrowRight,
@@ -14,6 +15,7 @@ import {
   Eye,
   Clock,
 } from "lucide-react";
+import { useAuth } from "../auth/AuthProvider";
 
 const sections = [
   {
@@ -62,6 +64,15 @@ const sections = [
     iconColor: "text-rose-700",
   },
   {
+    title: "Books",
+    description: "Manage the text and images on the Books page",
+    icon: BookOpen,
+    href: "/admin/book",
+    from: "from-slate-200",
+    to: "to-gray-50",
+    iconColor: "text-slate-700",
+  },
+  {
     title: "LGBTQ+",
     description: "Manage LGBTQ+ heritage, stories and initiatives",
     icon: Rainbow,
@@ -88,15 +99,28 @@ const stats = [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 px-10 py-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900" style={{fontSize: '3em'}}>
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900" style={{fontSize: '3em'}}>
           Welcome back, Admin 👋
-        </h1>
-        <p className="mt-1 text-gray-500" style={{fontSize: '3em'}}>
+          </h1>
+          <p className="mt-1 text-gray-500" style={{fontSize: '3em'}}>
           Manage your website content and monitor performance.
-        </p>
+          </p>
+        </div>
+        <button onClick={handleLogout} className="shrink-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50">
+          Logout
+        </button>
       </div>
 
       <div className="mt-8 border-t border-gray-100" />

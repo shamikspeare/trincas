@@ -48,10 +48,21 @@ export default function HistoryEditor() {
     <main className="min-h-screen bg-gray-50 px-10 py-8">
       <AnimatePresence>{toast ? <Toast toast={toast} /> : null}</AnimatePresence>
       <h1 className="text-3xl font-semibold text-gray-900 sm:text-4xl">History</h1>
-      <p className="mt-1 text-base text-gray-500 sm:text-lg">Manage the shared page layout for every History year.</p>
+      <p className="mt-1 text-base text-gray-500 sm:text-lg">Manage the gallery and embedded Instagram reels for every History year.</p>
       <div className="mt-8 flex flex-wrap gap-2">{decades.map((decade) => <button key={decade} type="button" onClick={() => changeDecade(decade)} className={`rounded-full px-4 py-1.5 text-sm font-medium ${selectedDecade === decade ? "bg-indigo-600 text-white" : "bg-white text-gray-700"}`}>{decade}</button>)}</div>
       <div className="mt-4 flex flex-wrap gap-2">{years.map((year) => <button key={year} type="button" onClick={() => setSelectedYear(year)} className={`rounded-md px-3 py-1.5 text-sm font-medium ${selectedYear === year ? "bg-indigo-600 text-white" : "bg-white text-gray-700"}`}>{year}</button>)}</div>
-      <div className="mt-8"><PageLayoutEditor pageKey={getHistoryPageKey(selectedYear)} title={`${selectedYear} history page`} notify={notify} /></div>
+      <div className="mt-8">
+        <PageLayoutEditor
+          pageKey={getHistoryPageKey(selectedYear)}
+          title={`${selectedYear} history page`}
+          notify={notify}
+          imageCardTitle="Gallery cards"
+          imageCardItemLabel="Gallery card"
+          addImageCardLabel="Add gallery card"
+          imageCardNameLabel="Gallery card name"
+          imageCardNamePlaceholder="Enter a gallery card name (optional)"
+        />
+      </div>
     </main>
   );
 }
