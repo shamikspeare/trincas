@@ -67,7 +67,7 @@ export default function LoginPage() {
         email: normalizedEmail,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: new URL("/dashboard", import.meta.env.VITE_PUBLIC_APP_URL?.trim() || window.location.origin).toString(),
         },
       });
 
