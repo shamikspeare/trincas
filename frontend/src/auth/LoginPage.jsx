@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { getAuthErrorMessage, isAllowedAdminEmail } from "./authConfig";
+import { getAuthErrorMessage, getAuthRedirectUrl, isAllowedAdminEmail } from "./authConfig";
 import { useAuth } from "./AuthProvider";
 
 export default function LoginPage() {
@@ -67,7 +67,7 @@ export default function LoginPage() {
         email: normalizedEmail,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: getAuthRedirectUrl(),
         },
       });
 

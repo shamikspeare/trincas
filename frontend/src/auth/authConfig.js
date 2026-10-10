@@ -6,6 +6,26 @@ export const ADMIN_EMAILS = new Set([
 export const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
 export const SESSION_WARNING_MS = 14 * 60 * 1000;
 
+const DEFAULT_AUTH_REDIRECT_URL = "https://trincas.vercel.app/dashboard";
+
+export function getAuthRedirectUrl() {
+  const configuredRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL?.trim();
+  const redirectUrl = configuredRedirectUrl || DEFAULT_AUTH_REDIRECT_URL;
+
+  try {
+    const parsedUrl = new URL(redirectUrl);
+    const isLocalDevelopment = ["localhost", "127.0.0.1"].includes(parsedUrl.hostname);
+
+    if (parsedUrl.protocol !== "https:" && !isLocalDevelopment) {
+      return DEFAULT_AUTH_REDIRECT_URL;
+    }
+
+    return parsedUrl.toString();
+  } catch {
+    return DEFAULT_AUTH_REDIRECT_URL;
+  }
+}
+
 export function isAllowedAdminEmail(email) {
   return ADMIN_EMAILS.has(email.trim().toLowerCase());
 }
