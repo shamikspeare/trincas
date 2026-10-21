@@ -31,7 +31,7 @@ import { AuthProvider } from "./auth/AuthProvider";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import PublicOnlyRoute from "./auth/PublicOnlyRoute";
 import LoginPage from "./auth/LoginPage";
-import IdleSessionGuard from "./auth/IdleSessionGuard";
+import SessionExpiryGuard from "./auth/IdleSessionGuard";
 
 function AppLayout() {
   const location = useLocation();
@@ -122,7 +122,7 @@ function App() {
     <Router>
       <AuthProvider>
         <ScrollToTop />
-        <IdleSessionGuard />
+        <SessionExpiryGuard />
         <AppLayout />
       </AuthProvider>
     </Router>

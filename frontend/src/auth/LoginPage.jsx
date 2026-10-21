@@ -6,14 +6,15 @@ import { useAuth } from "./AuthProvider";
 
 export default function LoginPage() {
   const location = useLocation();
-  const { beginPasswordVerification, finishPasswordVerification } = useAuth();
+  const { beginPasswordVerification, finishPasswordVerification, sessionEndReason } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(0);
-  const idleNotice = new URLSearchParams(location.search).get("reason") === "idle";
+  const sessionExpired = new URLSearchParams(location.search).get("reason") === "expired"
+    || sessionEndReason === "expired";
 
   useEffect(() => {
     if (secondsRemaining <= 0) return undefined;
@@ -90,7 +91,7 @@ export default function LoginPage() {
 
   return (
     <AuthShell title="CMS sign in" subtitle="Enter your credentials to receive a secure sign-in link.">
-      {idleNotice && <Notice>You were logged out due to inactivity.</Notice>}
+      {sessionExpired && <Notice>Your 24-hour CMS session expired. Please sign in again.</Notice>}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       <form className="space-y-5" onSubmit={handleSubmit}>
         <Label label="Email">

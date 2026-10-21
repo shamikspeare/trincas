@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../assets/logo.png';
 
-const NAV_LINKS = [
+export const NAV_LINKS = [
   { label: 'Home', to: '/' },
   { label: 'Dining Spaces', to: '/dining' },
   { label: 'Food & Beverages', to: '/food' },

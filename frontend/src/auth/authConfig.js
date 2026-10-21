@@ -3,8 +3,45 @@ export const ADMIN_EMAILS = new Set([
   "gshamik14@gmail.com",
 ]);
 
-export const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
-export const SESSION_WARNING_MS = 14 * 60 * 1000;
+export const CMS_SESSION_DURATION_MS = 24 * 60 * 60 * 1000;
+export const CMS_SESSION_WARNING_BEFORE_EXPIRY_MS = 5 * 60 * 1000;
+
+const CMS_SESSION_STARTED_AT_PREFIX = "trincas:cms-session-started-at:";
+
+function getSessionStartedAtStorageKey(sessionId) {
+  return `${CMS_SESSION_STARTED_AT_PREFIX}${sessionId}`;
+}
+
+export function getOrCreateCmsSessionStartedAt(sessionId, fallbackStartedAt, now = Date.now()) {
+  if (typeof window === "undefined") return fallbackStartedAt ?? now;
+
+  const storageKey = getSessionStartedAtStorageKey(sessionId);
+
+  try {
+    const storedStartedAt = Number(window.localStorage.getItem(storageKey));
+    if (Number.isFinite(storedStartedAt) && storedStartedAt > 0 && storedStartedAt <= now) {
+      return storedStartedAt;
+    }
+
+    const startedAt = Number.isFinite(fallbackStartedAt) && fallbackStartedAt > 0
+      ? Math.min(fallbackStartedAt, now)
+      : now;
+    window.localStorage.setItem(storageKey, String(startedAt));
+    return startedAt;
+  } catch {
+    return fallbackStartedAt ?? now;
+  }
+}
+
+export function clearCmsSessionStartedAt(sessionId) {
+  if (!sessionId || typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(getSessionStartedAtStorageKey(sessionId));
+  } catch {
+    // Supabase will still clear its own persisted session during sign-out.
+  }
+}
 
 const DEFAULT_AUTH_REDIRECT_URL = "https://trincas.vercel.app/dashboard";
 

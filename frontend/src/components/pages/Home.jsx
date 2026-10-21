@@ -8,6 +8,7 @@ import musicImg from '../../assets/music.webp';
 import historyImg from '../../assets/history.webp';
 import pressImg from '../../assets/home-press.webp';
 import prideImg from '../../assets/home-pride3.webp';
+import Footer from '../Footer';
 
 const frames = [
   { img: diningImg, heading: 'Dining Spaces', link: '/dining' },
@@ -119,18 +120,21 @@ const BookCard = ({ index }) => (
 
 const Home = () => {
   return (
-    <main className="w-full bg-white pt-12">
-      <div className="w-full flex flex-col">
-        {frames.map((frame, index) => (
-          <FrameCard
-            key={frame.heading}
-            index={index}
-            {...frame}
-          />
-        ))}
-        <BookCard index={frames.length} />
-      </div>
-    </main>
+    <>
+      <main className="w-full bg-white pt-12">
+        <div className="w-full flex flex-col">
+          {frames.map((frame, index) => (
+            <FrameCard
+              key={frame.heading}
+              index={index}
+              {...frame}
+            />
+          ))}
+          <BookCard index={frames.length} />
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 };
 
