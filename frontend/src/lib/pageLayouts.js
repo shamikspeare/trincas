@@ -7,6 +7,12 @@ export const MUSIC_SCHEDULE_PAGE_KEY = "music-schedule";
 export const MUSIC_TAVERN_SCHEDULE_PAGE_KEY = "music-tavern-schedule";
 export const BOOK_PAGE_KEY = "book";
 
+function getFoodSlugFromPageKey(pageKey) {
+  if (!pageKey?.startsWith("food:")) return null;
+  const slug = pageKey.slice("food:".length).trim();
+  return slug || null;
+}
+
 export function normalizeInstagramUrl(value) {
   try {
     const url = new URL(value.trim());
@@ -41,7 +47,8 @@ export function getInstagramEmbedUrl(value) {
 }
 
 export async function fetchPageLayout(pageKey) {
-  const [layoutResult, imageCardsResult, instagramResult] = await Promise.all([
+  const foodSlug = getFoodSlugFromPageKey(pageKey);
+  const [layoutResult, imageCardsResult, instagramResult, foodMenuResult] = await Promise.all([
     supabase.from("page_layouts").select("page_key, heading, lead_image_url, body").eq("page_key", pageKey).maybeSingle(),
     supabase
       .from("page_image_cards")
@@ -53,14 +60,32 @@ export async function fetchPageLayout(pageKey) {
       .select("id, instagram_url, display_order")
       .eq("page_key", pageKey)
       .order("display_order", { ascending: true }),
+    foodSlug
+      ? supabase
+          .from("food_pages")
+          .select("menu_images, menu_image_url")
+          .eq("slug", foodSlug)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
-  const failed = [layoutResult, imageCardsResult, instagramResult].find((result) => result.error);
+  const failed = [layoutResult, imageCardsResult, instagramResult, foodMenuResult].find((result) => result.error);
   if (failed?.error) throw failed.error;
+
+  const storedMenuImages = Array.isArray(foodMenuResult.data?.menu_images)
+    ? foodMenuResult.data.menu_images.filter(Boolean)
+    : [];
+  const legacyMenuImage = foodMenuResult.data?.menu_image_url;
+  const menuImages = storedMenuImages.length
+    ? storedMenuImages
+    : legacyMenuImage
+      ? [legacyMenuImage]
+      : [];
 
   return {
     layout: layoutResult.data,
     imageCards: imageCardsResult.data ?? [],
     instagramVideos: instagramResult.data ?? [],
+    menuImages,
   };
 }

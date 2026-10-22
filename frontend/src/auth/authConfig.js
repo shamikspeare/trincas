@@ -1,6 +1,7 @@
 export const ADMIN_EMAILS = new Set([
   "trincasrestaurant@gmail.com",
   "gshamik14@gmail.com",
+  "presentedbypconsultancy@gmail.com",
 ]);
 
 export const CMS_SESSION_DURATION_MS = 24 * 60 * 60 * 1000;

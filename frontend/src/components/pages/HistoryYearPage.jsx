@@ -87,7 +87,7 @@ export default function HistoryYearPage() {
           background: `linear-gradient(to bottom, ${gradient.from}, ${gradient.via}, ${gradient.to})`,
           transition: "background 0.5s ease",
         }}
-        className="px-4 pt-6 sm:px-6 md:px-10"
+        className="px-4 sm:px-6 md:px-10"
       >
         <Breadcrumb items={[]}>
           <button
@@ -100,7 +100,7 @@ export default function HistoryYearPage() {
         </Breadcrumb>
 
         <section className="mx-auto flex w-full max-w-7xl flex-col items-center">
-          <div className="mt-16 w-full sm:mt-20 md:mt-24">
+          <div className="mt-8 w-full sm:mt-20 md:mt-24">
             <YearDial years={years} activeYear={activeYear} setActiveYear={setActiveYear} />
           </div>
         </section>
@@ -112,7 +112,7 @@ export default function HistoryYearPage() {
           background: `linear-gradient(to bottom, ${gradient.to}, white)`,
           transition: "background 0.5s ease",
         }}
-        className="h-24 sm:h-32 md:h-40"
+        className="h-6 sm:h-32 md:h-40"
         aria-hidden="true"
       />
 
@@ -124,7 +124,7 @@ export default function HistoryYearPage() {
           <div className="py-16 text-center text-rose-500">{error}</div>
         ) : (
           <>
-            <header className="mx-auto mt-2 w-full max-w-5xl text-center">
+            <header className="mx-auto w-full max-w-5xl text-center">
               <h1 className="font-serif text-5xl font-bold leading-none text-black sm:text-6xl md:text-7xl">
                 {activeYear}
               </h1>

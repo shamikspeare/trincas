@@ -99,7 +99,7 @@ export default function YearDial({ years, activeYear, setActiveYear }) {
         onPanEnd={handlePanEnd}
         className="
           relative touch-none 
-          py-10 px-[3.75rem] sm:py-12 sm:px-20 md:py-[3.75rem] md:px-[7.5rem]
+          py-4 px-[3.75rem] sm:py-12 sm:px-20 md:py-[3.75rem] md:px-[7.5rem]
           flex items-center justify-center
         "
       >
@@ -186,9 +186,9 @@ export default function YearDial({ years, activeYear, setActiveYear }) {
         </div>
       </motion.div>
 
-      <div className="mt-16 mb-8 flex flex-col items-center text-blue-500 sm:mt-14 sm:mb-12 md:mt-18 md:mb-14">
+      <div className="mt-10 mb-2 flex flex-col items-center text-blue-500 sm:mt-14 sm:mb-12 md:mt-18 md:mb-14">
         <ChevronsDown className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />
-        <p className="mt-3 text-xs sm:text-sm font-medium tracking-[0.12em]">Scroll Down</p>
+        <p className="mt-1 text-xs sm:mt-3 sm:text-sm font-medium tracking-[0.12em]">Scroll Down</p>
       </div>
     </section>
   );

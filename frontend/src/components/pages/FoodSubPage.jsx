@@ -1,8 +1,8 @@
 // src/pages/FoodSubPage.jsx
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ImageOff, RefreshCw } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Expand, ImageOff, RefreshCw, X } from "lucide-react";
 import Breadcrumb from "../Breadcrumb";
 import InstagramReelCarousel from "../InstagramReelCarousel";
 import { fetchPageLayout, getFoodPageKey } from "../../lib/pageLayouts";
@@ -100,6 +100,8 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedMenuOpen, setSelectedMenuOpen] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const load = useCallback(async () => {
     if (!slug) return;
@@ -118,9 +120,39 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
     load();
   }, [load]);
 
+  const openMenu = () => {
+    setSelectedMenuOpen(true);
+    requestAnimationFrame(() => setIsAnimating(true));
+  };
+
+  const closeMenu = () => {
+    setIsAnimating(false);
+    window.setTimeout(() => setSelectedMenuOpen(false), 300);
+  };
+
+  useEffect(() => {
+    document.body.style.overflow = selectedMenuOpen ? "hidden" : "";
+
+    const handleKeyDown = (event) => {
+      if (selectedMenuOpen && event.key === "Escape") closeMenu();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedMenuOpen]);
+
   if (loading) return <PageLoading />;
   if (error) return <PageError title={displayTitle} onRetry={load} />;
 
+  const menuImages = data?.menuImages?.length
+    ? data.menuImages
+    : data?.layout?.lead_image_url
+      ? [data.layout.lead_image_url]
+      : [];
+  const previewMenuImage = menuImages[0] || null;
   const cards = data?.imageCards || [];
 
   return (
@@ -139,8 +171,40 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
         initial="hidden"
         animate="visible"
       >
+        <motion.section variants={cardVariants} className="mt-2 w-full">
+          {previewMenuImage ? (
+            <button
+              type="button"
+              onClick={openMenu}
+              className="group relative block w-full overflow-hidden rounded-lg text-left"
+              aria-label={`Expand ${displayTitle} menu`}
+            >
+              <img
+                src={previewMenuImage}
+                alt={`${displayTitle} menu cover`}
+                className="h-auto w-full object-cover"
+                loading="eager"
+                decoding="async"
+              />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/40 px-5 py-2.5 text-sm font-bold text-black shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-transform group-active:scale-95">
+                  <Expand className="h-4 w-4" />
+                  <span>Expand</span>
+                </span>
+              </span>
+            </button>
+          ) : (
+            <div className="flex h-56 w-full items-center justify-center bg-white text-gray-500">
+              <div className="flex flex-col items-center gap-2 text-sm">
+                <ImageOff className="h-6 w-6 opacity-60" />
+                Menu image coming soon
+              </div>
+            </div>
+          )}
+        </motion.section>
+
         {/* Featured dishes */}
-        <motion.section variants={cardVariants} className="mt-2 sm:mt-4">
+        <motion.section variants={cardVariants} className="mt-10 sm:mt-12">
           <SectionHeading title="Featured Dishes" subtitle="Guest favourites" />
 
           {cards.length === 0 ? (
@@ -158,6 +222,55 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
 
         <InstagramReelCarousel videos={data?.instagramVideos || []} title="On Instagram" />
       </motion.div>
+
+      <AnimatePresence>
+        {selectedMenuOpen && previewMenuImage ? (
+          <div
+            className={`fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md transition-opacity duration-300 ${
+              isAnimating ? "opacity-100" : "opacity-0"
+            }`}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${displayTitle} menu`}
+          >
+            <div className="absolute left-0 right-0 top-0 z-10 flex justify-start p-4 pt-[74px]">
+              <button
+                type="button"
+                onClick={closeMenu}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 shadow-md transition hover:bg-white/20 active:scale-95"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
+            </div>
+
+            <div
+              className="flex w-full flex-1 flex-col items-center overflow-y-auto px-4 pb-10 pt-[120px]"
+              onClick={closeMenu}
+              role="presentation"
+            >
+              <div
+                className={`flex w-full max-w-5xl flex-col items-center justify-start gap-4 transition-all duration-300 ${
+                  isAnimating ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+                }`}
+                onClick={(event) => event.stopPropagation()}
+                role="presentation"
+              >
+                {menuImages.map((imageUrl, index) => (
+                  <img
+                    key={`${imageUrl}-${index}`}
+                    src={imageUrl}
+                    alt={`${displayTitle} menu page ${index + 1}`}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    className="h-auto w-full rounded object-contain shadow-2xl"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </AnimatePresence>
     </main>
   );
 }
