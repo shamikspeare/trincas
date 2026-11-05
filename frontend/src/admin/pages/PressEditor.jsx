@@ -68,7 +68,14 @@ function reorder(items, from, to) {
   return next;
 }
 
-function PublicationField({ publications, value, publicationId, onChange }) {
+function PublicationField({
+  publications,
+  value,
+  publicationId,
+  deletingPublicationId,
+  onChange,
+  onDelete,
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef(null);
@@ -193,22 +200,42 @@ function PublicationField({ publications, value, publicationId, onChange }) {
           className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
         >
           {filteredPublications.map((publication) => (
-            <button
+            <div
               key={publication.normalized_name}
-              type="button"
-              role="option"
-              aria-selected={publicationId === publication.id || normalizedSelectedName === publication.normalized_name}
-              onClick={() => selectPublication(publication)}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
+              className="group flex w-full items-center rounded-md text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
             >
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <Tag className="h-4 w-4 shrink-0 text-indigo-400" aria-hidden="true" />
-                <span className="truncate">{publication.name}</span>
-              </span>
-              {(publicationId === publication.id || normalizedSelectedName === publication.normalized_name) ? (
-                <Check className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+              <button
+                type="button"
+                role="option"
+                aria-selected={publicationId === publication.id || normalizedSelectedName === publication.normalized_name}
+                onClick={() => selectPublication(publication)}
+                className="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left"
+              >
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <Tag className="h-4 w-4 shrink-0 text-indigo-400" aria-hidden="true" />
+                  <span className="truncate">{publication.name}</span>
+                </span>
+                {(publicationId === publication.id || normalizedSelectedName === publication.normalized_name) ? (
+                  <Check className="h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
+                ) : null}
+              </button>
+              {publication.id ? (
+                <button
+                  type="button"
+                  onClick={() => onDelete(publication)}
+                  disabled={deletingPublicationId === publication.id}
+                  className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-rose-100 hover:text-rose-600 disabled:cursor-wait disabled:opacity-60"
+                  aria-label={`Delete ${publication.name} publication from the database`}
+                  title="Delete publication name"
+                >
+                  {deletingPublicationId === publication.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </button>
               ) : null}
-            </button>
+            </div>
           ))}
 
           {cleanedQuery && !exactQueryMatch ? (
@@ -229,7 +256,7 @@ function PublicationField({ publications, value, publicationId, onChange }) {
       ) : null}
 
       <p className="mt-1.5 text-xs text-gray-500">
-        Select a publication or type a new one. Any typed publication is created automatically when you save the press item.
+        Select a publication or type a new one. Use the trash icon to remove an existing publication from the database and its linked press items.
       </p>
     </div>
   );
@@ -347,6 +374,7 @@ export default function PressEditor() {
   const [toast, setToast] = useState(null);
   const [draggingIndex, setDraggingIndex] = useState(null);
   const [reordering, setReordering] = useState(false);
+  const [deletingPublicationId, setDeletingPublicationId] = useState(null);
 
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -535,6 +563,55 @@ export default function PressEditor() {
     }
   };
 
+  const handleDeletePublication = async (publication) => {
+    if (!publication?.id || deletingPublicationId) return;
+
+    const linkedItemCount = items.filter((item) => {
+      const relation = publicationRelation(item);
+      return (
+        item.publication_id === publication.id
+        || relation?.id === publication.id
+        || normalizePublicationName(getPressItemPublicationName(item)) === publication.normalized_name
+      );
+    }).length;
+    const linkedItemMessage = linkedItemCount
+      ? ` It will also remove this publication from ${linkedItemCount} linked press ${linkedItemCount === 1 ? "item" : "items"}.`
+      : "";
+
+    if (!window.confirm(
+      `Delete the publication “${publication.name}” from the database?${linkedItemMessage} The press items themselves will not be deleted.`
+    )) return;
+
+    setDeletingPublicationId(publication.id);
+    try {
+      const { data, error } = await supabase
+        .from("press_publications")
+        .delete()
+        .eq("id", publication.id)
+        .select("id");
+      if (error) throw error;
+      if (!data?.length) throw new Error("The publication was not deleted");
+
+      setFormData((current) => {
+        if (!current) return current;
+        const currentMatches = (
+          current.publication_id === publication.id
+          || normalizePublicationName(current.publication) === publication.normalized_name
+        );
+        return currentMatches
+          ? { ...current, publication: "", publication_id: null }
+          : current;
+      });
+      notify("success", `Publication “${publication.name}” deleted`);
+      await fetchItems();
+    } catch (err) {
+      console.error(err);
+      notify("error", err.message || "Failed to delete publication");
+    } finally {
+      setDeletingPublicationId(null);
+    }
+  };
+
   const persistOrder = async (orderedItems) => {
     const nextItems = orderedItems.map((item, index) => ({ ...item, sort_order: index }));
     setItems(nextItems);
@@ -706,11 +783,13 @@ export default function PressEditor() {
                       publications={publications}
                       value={formData?.publication || ""}
                       publicationId={formData?.publication_id || null}
+                      deletingPublicationId={deletingPublicationId}
                       onChange={(publication, publicationId) => setFormData({
                         ...formData,
                         publication,
                         publication_id: publicationId,
                       })}
+                      onDelete={handleDeletePublication}
                     />
 
                     <div>

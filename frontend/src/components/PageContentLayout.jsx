@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
-import { ImageOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Expand, ImageOff, X } from "lucide-react";
 import Breadcrumb from "./Breadcrumb";
 import InstagramReelCarousel from "./InstagramReelCarousel";
 import { sanitizeHtml } from "../lib/sanitize";
@@ -30,10 +31,32 @@ function SectionHeading({ children }) {
 }
 
 function MenuStyleLeadImage({ src, alt, emptyText }) {
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [expanded]);
+
   return (
-    <motion.section variants={sectionVariants} className="mt-2 w-full">
+    <motion.section variants={sectionVariants} className="mt-2 flex w-full justify-center">
       {src ? (
-        <div className="w-full overflow-hidden rounded-lg">
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="group relative block w-full max-w-sm overflow-hidden rounded-lg text-left shadow-[0_20px_55px_rgba(15,23,42,0.28)] transition-shadow duration-300 hover:shadow-[0_24px_65px_rgba(15,23,42,0.36)]"
+          aria-label={`Expand ${alt}`}
+        >
           <img
             src={src}
             alt={alt}
@@ -41,12 +64,61 @@ function MenuStyleLeadImage({ src, alt, emptyText }) {
             loading="eager"
             decoding="async"
           />
-        </div>
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/40 px-5 py-2.5 text-sm font-bold text-black shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-transform group-active:scale-95">
+              <Expand className="h-4 w-4" aria-hidden="true" />
+              <span>Expand</span>
+            </span>
+          </span>
+        </button>
       ) : (
         <div className="flex aspect-[9/16] w-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50/60 px-6 text-center text-gray-500">
           <p className="text-sm sm:text-base">{emptyText}</p>
         </div>
       )}
+
+      <AnimatePresence>
+        {expanded && src ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md"
+            role="dialog"
+            aria-modal="true"
+            aria-label={alt}
+          >
+            <div className="absolute left-0 right-0 top-0 z-10 flex justify-start p-4 pt-[74px]">
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 shadow-md transition hover:bg-white/20 active:scale-95"
+                aria-label={`Close ${alt}`}
+              >
+                <X className="h-5 w-5 text-white" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div
+              className="flex min-h-0 w-full flex-1 items-center justify-center overflow-auto px-4 pb-8 pt-[116px]"
+              onClick={() => setExpanded(false)}
+              role="presentation"
+            >
+              <motion.img
+                initial={{ opacity: 0, scale: 0.94, y: 18 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 18 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                src={src}
+                alt={alt}
+                className="h-full max-h-full w-auto max-w-full rounded object-contain shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+              />
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.section>
   );
 }

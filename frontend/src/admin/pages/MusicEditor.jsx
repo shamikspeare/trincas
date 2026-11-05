@@ -3,13 +3,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import PageLayoutEditor from "../components/PageLayoutEditor";
 import {
-  MUSIC_PAGE_KEY,
   MUSIC_SCHEDULE_PAGE_KEY,
   MUSIC_TAVERN_SCHEDULE_PAGE_KEY,
 } from "../../lib/pageLayouts";
 
 const MUSIC_PAGES = [
-  { key: MUSIC_PAGE_KEY, title: "Main Music Page", desc: "Manage the hero image, timeline cards and reels for the main Music page." },
   { key: MUSIC_SCHEDULE_PAGE_KEY, title: "Music at Trincas", desc: "Manage the hero image, timeline cards and reels for Music at Trincas." },
   { key: MUSIC_TAVERN_SCHEDULE_PAGE_KEY, title: "Music at Tavern", desc: "Manage the hero image, timeline cards and reels for Music at Tavern." },
 ];

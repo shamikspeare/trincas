@@ -86,7 +86,6 @@ export default function Music() {
         instagramVideos={data?.instagramVideos}
         imageCardsTitle="Music Highlights"
         instagramTitle="On Instagram"
-        menuStyleLeadImage
         leadImageAlt="Music hero image"
       />
 
