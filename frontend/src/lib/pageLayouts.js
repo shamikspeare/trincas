@@ -46,18 +46,35 @@ export function getInstagramEmbedUrl(value) {
   return canonicalUrl ? `${canonicalUrl}embed/` : null;
 }
 
+export function mergePageMediaItems(imageCards = [], instagramVideos = []) {
+  return [
+    ...imageCards.map((item) => ({ ...item, kind: "image" })),
+    ...instagramVideos.map((item) => ({ ...item, kind: "instagram" })),
+  ].sort((a, b) => {
+    const orderDifference = (a.display_order ?? 0) - (b.display_order ?? 0);
+    if (orderDifference) return orderDifference;
+
+    if (a.kind !== b.kind) return a.kind === "image" ? -1 : 1;
+
+    const createdDifference = String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    if (createdDifference) return createdDifference;
+
+    return String(a.id).localeCompare(String(b.id));
+  });
+}
+
 export async function fetchPageLayout(pageKey) {
   const foodSlug = getFoodSlugFromPageKey(pageKey);
   const [layoutResult, imageCardsResult, instagramResult, foodMenuResult] = await Promise.all([
     supabase.from("page_layouts").select("page_key, heading, lead_image_url, body").eq("page_key", pageKey).maybeSingle(),
     supabase
       .from("page_image_cards")
-      .select("id, image_url, alt_text, display_order")
+      .select("id, image_url, alt_text, display_order, created_at")
       .eq("page_key", pageKey)
       .order("display_order", { ascending: true }),
     supabase
       .from("page_instagram_videos")
-      .select("id, instagram_url, display_order")
+      .select("id, instagram_url, display_order, created_at")
       .eq("page_key", pageKey)
       .order("display_order", { ascending: true }),
     foodSlug
@@ -82,10 +99,14 @@ export async function fetchPageLayout(pageKey) {
       ? [legacyMenuImage]
       : [];
 
+  const imageCards = imageCardsResult.data ?? [];
+  const instagramVideos = instagramResult.data ?? [];
+
   return {
     layout: layoutResult.data,
-    imageCards: imageCardsResult.data ?? [],
-    instagramVideos: instagramResult.data ?? [],
+    imageCards,
+    instagramVideos,
+    mediaItems: mergePageMediaItems(imageCards, instagramVideos),
     menuImages,
   };
 }

@@ -15,17 +15,9 @@ import ImageUploadSummaryMessage from "../components/ImageUploadSummaryMessage";
 import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
 import PageLayoutEditor from "../components/PageLayoutEditor";
 import { getFoodPageKey } from "../../lib/pageLayouts";
+import { FOOD_CUISINES } from "../../lib/foodCuisines";
 
 const BUCKET = "food";
-
-// Fixed cuisine set — no add/rename/delete from the dashboard.
-const FIXED_CUISINES = [
-  { name: "Indian", slug: "indian" },
-  { name: "Chinese", slug: "chinese" },
-  { name: "Continental", slug: "continental" },
-  { name: "Drinks", slug: "drinks" },
-  { name: "Cafe", slug: "cafe" },
-];
 
 function tempId() {
   return `tmp_${Math.random().toString(36).slice(2, 10)}`;
@@ -276,9 +268,9 @@ function CuisinePageEditor({ cuisine, notify }) {
       pageKey={getFoodPageKey(cuisine.slug)}
       title={`${cuisine.name} cuisine page`}
       notify={notify}
-      imageCardTitle="Feature dishes"
-      imageCardItemLabel="Feature dish"
-      addImageCardLabel="Add feature dish"
+      imageCardTitle="Food & Vibe photos"
+      imageCardItemLabel="Food & Vibe photo"
+      addImageCardLabel="Add Food & Vibe photo"
       imageCardNameLabel="Dish name"
       imageCardNamePlaceholder="Enter the dish name"
     />
@@ -299,7 +291,7 @@ export default function FoodEditor() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  // Ensures all five fixed rows exist in food_cuisines (requirement 10),
+  // Ensures all fixed rows exist in food_cuisines,
   // without ever creating duplicates (requirement 3) or clobbering an
   // existing image_url — upsert only writes the columns given below.
   const loadCuisines = useCallback(async () => {
@@ -307,7 +299,7 @@ export default function FoodEditor() {
     setLoadError(null);
     try {
       const results = await Promise.all(
-        FIXED_CUISINES.map((fixed, index) =>
+        FOOD_CUISINES.map((fixed, index) =>
           supabase
             .from("food_cuisines")
             .upsert(
@@ -385,7 +377,7 @@ export default function FoodEditor() {
         <section className="mt-10">
           <h2 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Cuisine Pages</h2>
           <p className="mt-1 text-lg text-gray-500 sm:text-xl">
-            Manage feature dishes and Instagram reels for each cuisine page.
+            Manage each cuisine's combined Food &amp; Vibe photos and Instagram reels.
           </p>
 
           <div className="mt-4 space-y-3">

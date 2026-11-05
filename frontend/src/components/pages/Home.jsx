@@ -7,16 +7,14 @@ import foodImg from '../../assets/food.webp';
 import musicImg from '../../assets/music.webp';
 import historyImg from '../../assets/history.webp';
 import pressImg from '../../assets/home-press.webp';
-import prideImg from '../../assets/home-pride3.webp';
 import Footer from '../Footer';
 
 const frames = [
   { img: diningImg, heading: 'Dining Spaces', link: '/dining' },
   { img: foodImg, heading: 'Food & Beverages', link: '/food' },
   { img: musicImg, heading: 'Music', link: '/music' },
-  { img: historyImg, heading: 'History', link: '/history' },
+  { img: historyImg, heading: 'All The Performers Ever', link: '/history' },
   { img: pressImg, heading: 'Press', link: '/press' },
-  { img: prideImg, heading: 'Pride', link: '/pride' },
 ];
 
 /* Small ornamental divider below headings */
@@ -110,7 +108,7 @@ const BookCard = ({ index }) => (
           fontSize: 'clamp(2rem, 5vw, 3rem)',
         }}
       >
-        Books
+        Book &amp; Blog
       </h2>
 
       <OrnamentalDivider />

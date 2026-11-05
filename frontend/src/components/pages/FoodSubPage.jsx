@@ -4,8 +4,8 @@ import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Expand, ImageOff, RefreshCw, X } from "lucide-react";
 import Breadcrumb from "../Breadcrumb";
-import InstagramReelCarousel from "../InstagramReelCarousel";
-import { fetchPageLayout, getFoodPageKey } from "../../lib/pageLayouts";
+import { InstagramReelCard } from "../InstagramReelCarousel";
+import { fetchPageLayout, getFoodPageKey, normalizeInstagramUrl } from "../../lib/pageLayouts";
 
 const pageVariants = {
   hidden: { opacity: 0, y: 18 },
@@ -44,11 +44,11 @@ const FeaturedCard = ({ card }) => {
       className="snap-start shrink-0 w-[78%] sm:w-[46%] lg:w-[23%]"
     >
       <div className="h-full overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-sm">
-        <div className="relative">
+        <div className="relative aspect-[9/16] bg-gray-100">
           <img
             src={card.image_url || card.src}
             alt={altText}
-            className="h-44 sm:h-48 w-full object-cover"
+            className="h-full w-full object-cover"
             loading="lazy"
             decoding="async"
           />
@@ -85,10 +85,10 @@ const PageError = ({ title, onRetry }) => (
   </main>
 );
 
-const EmptyDishes = () => (
+const EmptyFoodAndVibe = () => (
   <div className="mt-6 flex flex-col items-center justify-center gap-2 rounded-[22px] border border-dashed border-gray-200 bg-white/60 py-12 text-center text-gray-500">
     <ImageOff className="h-6 w-6 opacity-60" />
-    <p className="text-sm">No featured dishes have been added yet.</p>
+    <p className="text-sm">Food &amp; Vibe content is coming soon.</p>
   </div>
 );
 
@@ -153,7 +153,9 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
       ? [data.layout.lead_image_url]
       : [];
   const previewMenuImage = menuImages[0] || null;
-  const cards = data?.imageCards || [];
+  const foodAndVibeItems = (data?.mediaItems || []).filter((item) =>
+    item.kind === "image" ? Boolean(item.image_url) : Boolean(normalizeInstagramUrl(item.instagram_url))
+  );
 
   return (
     <main className="min-h-[60vh] bg-white">
@@ -203,24 +205,26 @@ export default function FoodSubPage({ slug: propSlug, title, basePath }) {
           )}
         </motion.section>
 
-        {/* Featured dishes */}
+        {/* Food imagery and Instagram reels intentionally share one section. */}
         <motion.section variants={cardVariants} className="mt-10 sm:mt-12">
-          <SectionHeading title="Featured Dishes" subtitle="Guest favourites" />
+          <SectionHeading title="Food & Vibe" />
 
-          {cards.length === 0 ? (
-            <EmptyDishes />
-          ) : (
+          {foodAndVibeItems.length > 0 ? (
             <div className="mt-6 -mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
-              <div className="flex gap-4 snap-x snap-mandatory">
-                {cards.map((card) => (
-                  <FeaturedCard key={card.id} card={card} />
+              <div className="flex items-start gap-4 snap-x snap-mandatory">
+                {foodAndVibeItems.map((item, index) => (
+                  item.kind === "image"
+                    ? <FeaturedCard key={`image-${item.id}`} card={item} />
+                    : <InstagramReelCard key={`instagram-${item.id}`} video={item} index={index} />
                 ))}
               </div>
             </div>
-          )}
-        </motion.section>
+          ) : null}
 
-        <InstagramReelCarousel videos={data?.instagramVideos || []} title="On Instagram" />
+          {foodAndVibeItems.length === 0 ? (
+            <EmptyFoodAndVibe />
+          ) : null}
+        </motion.section>
       </motion.div>
 
       <AnimatePresence>

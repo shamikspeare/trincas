@@ -41,9 +41,9 @@ export default function BookEditor() {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-8 sm:px-10">
       <AnimatePresence>{toast ? <Toast toast={toast} /> : null}</AnimatePresence>
-      <h1 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Books</h1>
+      <h1 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Book &amp; Blog</h1>
       <p className="mt-1 text-base text-gray-500 sm:text-lg">
-        Build the Books page with text and image sections in any order.
+        The Book section shows “Coming Soon”. Manage the Trincas Timeline Project blog posts below.
       </p>
 
       <div className="mt-8">

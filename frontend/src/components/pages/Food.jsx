@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Breadcrumb from '../Breadcrumb';
 import { supabase } from '../../lib/supabase';
+import { mergeFoodCuisines } from '../../lib/foodCuisines';
 
 /* Small ornamental divider below headings */
 const OrnamentalDivider = () => (
@@ -43,14 +44,23 @@ const FrameCard = ({ img, heading, compact, index, link, objectPosition }) => (
   >
     <Link to={link} className="mx-auto flex flex-col items-center hover:opacity-90 transition-opacity" style={{ maxWidth: 600, padding: index === 0 ? '1.5rem 1.25rem' : '0.25rem 1.25rem 1.5rem 1.25rem' }}>
       <div className="w-full" style={{ maxWidth: compact ? 460 : 520 }}>
-        <img
-          src={img}
-          alt={heading}
-          className={`w-full ${compact ? 'object-contain' : 'object-cover rounded-2xl'}`}
-          style={{ aspectRatio: '16 / 10', objectPosition: objectPosition || 'center' }}
-          loading="lazy"
-          decoding="async"
-        />
+        {img ? (
+          <img
+            src={img}
+            alt={heading}
+            className={`w-full ${compact ? 'object-contain' : 'object-cover rounded-2xl'}`}
+            style={{ aspectRatio: '16 / 10', objectPosition: objectPosition || 'center' }}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div
+            className="flex w-full items-center justify-center rounded-2xl bg-[#f3efe8] text-sm tracking-wide text-[#766b5e]"
+            style={{ aspectRatio: '16 / 10' }}
+          >
+            Image coming soon
+          </div>
+        )}
       </div>
 
       <h2
@@ -91,7 +101,7 @@ const Food = () => {
         setFrames([]);
       } else {
         setFrames(
-          (data || []).map((row) => ({
+          mergeFoodCuisines(data).map((row) => ({
             img: row.image_url,
             heading: row.name,
             compact: false,

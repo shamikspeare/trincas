@@ -8,6 +8,8 @@ import mingHeaderImg from '../../assets/ming-header.png';
 import trincasLogoImg from '../../assets/logo.png';
 import tavernHeaderImg from '../../assets/tavern-header.png';
 
+const DINING_ORDER = ['trincas', 'tavern', 'the-other-room', 'ming-room'];
+
 /* Small ornamental divider below headings */
 const OrnamentalDivider = () => (
   <div className="flex items-center justify-center mt-3 gap-1.5 opacity-50">
@@ -156,10 +158,17 @@ const Dining = () => {
         return;
       }
 
-      const merged = (data || []).map((row) => ({
-        ...row,
-        ...getDiningMetadata(row.slug, row.name)
-      }));
+      const merged = (data || [])
+        .map((row) => ({
+          ...row,
+          ...getDiningMetadata(row.slug, row.name)
+        }))
+        .sort((a, b) => {
+          const aIndex = DINING_ORDER.indexOf(a.slug);
+          const bIndex = DINING_ORDER.indexOf(b.slug);
+          return (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex)
+            - (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex);
+        });
 
       setDiningSpaces(merged);
       setLoading(false);

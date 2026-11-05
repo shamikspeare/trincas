@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Trash2,
@@ -11,14 +11,229 @@ import {
   Pencil,
   X,
   Newspaper,
-  GripVertical
+  GripVertical,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Tag,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import {
+  buildPublicationOptions,
+  cleanPublicationName,
+  getPressItemPublicationName,
+  normalizePublicationName,
+} from "../../lib/pressPublications";
 import ImageUploadSummaryMessage from "../components/ImageUploadSummaryMessage";
 import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
 import ImageProcessingModal from "../components/ImageProcessingModal";
 
 const BUCKET = "press-images";
+const MISSING_PUBLICATION_SCHEMA_CODES = ["42703", "42P01", "PGRST200", "PGRST205"];
+
+function publicationRelation(item) {
+  return Array.isArray(item?.publication_record)
+    ? item.publication_record[0]
+    : item?.publication_record;
+}
+
+function mergePublications(registeredPublications, items) {
+  const publications = new Map();
+
+  registeredPublications.forEach((publication) => {
+    publications.set(publication.normalized_name, publication);
+  });
+
+  buildPublicationOptions(items).forEach((publication) => {
+    if (!publications.has(publication.key)) {
+      publications.set(publication.key, {
+        id: null,
+        name: publication.name,
+        normalized_name: publication.key,
+      });
+    }
+  });
+
+  return Array.from(publications.values()).sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+  );
+}
+
+function reorder(items, from, to) {
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
+function PublicationField({ publications, value, publicationId, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef(null);
+  const inputRef = useRef(null);
+  const selectedName = cleanPublicationName(value);
+  const normalizedSelectedName = normalizePublicationName(selectedName);
+  const cleanedQuery = cleanPublicationName(query);
+  const normalizedQuery = normalizePublicationName(query);
+
+  const filteredPublications = useMemo(() => {
+    if (!normalizedQuery) return publications;
+    return publications.filter((publication) =>
+      publication.normalized_name.includes(normalizedQuery)
+    );
+  }, [normalizedQuery, publications]);
+
+  const exactQueryMatch = publications.find(
+    (publication) => publication.normalized_name === normalizedQuery
+  );
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event) => {
+      if (!containerRef.current?.contains(event.target)) setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, []);
+
+  const selectPublication = (publication) => {
+    onChange(publication.name, publication.id);
+    setQuery("");
+    setOpen(false);
+  };
+
+  const chooseNewPublication = () => {
+    if (!cleanedQuery) return;
+    onChange(cleanedQuery, null);
+    setQuery("");
+    setOpen(false);
+  };
+
+  const clearPublication = () => {
+    onChange("", null);
+    setQuery("");
+    setOpen(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label htmlFor="press-publication" className="block text-sm font-medium text-gray-700">
+        Publication Name
+      </label>
+      <div
+        className="mt-1 flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2.5 py-1.5 shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500"
+        onClick={() => inputRef.current?.focus()}
+        role="presentation"
+      >
+        {selectedName && !query ? (
+          <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">
+            <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">{selectedName}</span>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                clearPublication();
+              }}
+              className="rounded-full p-0.5 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700"
+              aria-label={`Remove ${selectedName} publication tag`}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ) : (
+          <Search className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+        )}
+        <input
+          ref={inputRef}
+          id="press-publication"
+          type="text"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-controls="press-publication-options"
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            onChange(event.target.value, null);
+            setOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setOpen(false);
+            if (event.key === "ArrowDown") setOpen(true);
+            if (event.key === "Backspace" && !query && selectedName) clearPublication();
+            if (event.key === "Enter" && cleanedQuery) {
+              event.preventDefault();
+              if (exactQueryMatch) selectPublication(exactQueryMatch);
+              else chooseNewPublication();
+            }
+          }}
+          placeholder={selectedName && !query ? "Search or replace publication" : "Search or create a publication"}
+          maxLength={160}
+          className="min-w-[10rem] flex-1 border-0 bg-transparent p-0.5 text-sm text-gray-900 outline-none placeholder:text-gray-400"
+        />
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          className="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          aria-label="Toggle publication names"
+        >
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+
+      {open ? (
+        <div
+          id="press-publication-options"
+          role="listbox"
+          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+        >
+          {filteredPublications.map((publication) => (
+            <button
+              key={publication.normalized_name}
+              type="button"
+              role="option"
+              aria-selected={publicationId === publication.id || normalizedSelectedName === publication.normalized_name}
+              onClick={() => selectPublication(publication)}
+              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
+            >
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <Tag className="h-4 w-4 shrink-0 text-indigo-400" aria-hidden="true" />
+                <span className="truncate">{publication.name}</span>
+              </span>
+              {(publicationId === publication.id || normalizedSelectedName === publication.normalized_name) ? (
+                <Check className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+              ) : null}
+            </button>
+          ))}
+
+          {cleanedQuery && !exactQueryMatch ? (
+            <button
+              type="button"
+              onClick={chooseNewPublication}
+              className="flex w-full items-center gap-2 rounded-md border-t border-gray-100 px-3 py-2 text-left text-sm text-indigo-700 hover:bg-indigo-50"
+            >
+              <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Create publication <span className="font-semibold">“{cleanedQuery}”</span></span>
+            </button>
+          ) : null}
+
+          {!filteredPublications.length && (!cleanedQuery || exactQueryMatch) ? (
+            <p className="px-3 py-2 text-sm text-gray-500">No publications found.</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <p className="mt-1.5 text-xs text-gray-500">
+        Select a publication or type a new one. Any typed publication is created automatically when you save the press item.
+      </p>
+    </div>
+  );
+}
 
 async function uploadImage(file, options = {}) {
   const processedFile = await processImage(file, options);
@@ -54,20 +269,44 @@ function Toast({ toast }) {
   );
 }
 
-// Reorderable Card Component
-function PressItemCard({ item, onEdit, onDelete, onDragEnd }) {
-  const dragControls = useDragControls();
-
+function PressItemCard({ item, index, itemCount, disabled, onEdit, onDelete, onDragStart, onDragEnd, onDrop, onMove }) {
   return (
-    <Reorder.Item
-      value={item}
-      id={item.id}
-      dragListener={false}
-      dragControls={dragControls}
+    <article
+      draggable={!disabled}
+      onDragStart={() => onDragStart(index)}
       onDragEnd={onDragEnd}
-      className="relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 flex flex-col group w-[240px]"
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={() => onDrop(index)}
+      className={`group relative flex min-w-0 flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 transition ${disabled ? "cursor-wait opacity-70" : "cursor-grab active:cursor-grabbing"}`}
     >
-      <div className="aspect-[3/4] w-full bg-gray-100 relative shrink-0">
+      <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-3 py-2">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+          <GripVertical className="h-4 w-4" aria-hidden="true" />
+          <span>Drag to reorder</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onMove(index, -1)}
+            disabled={disabled || index === 0}
+            className="rounded-md p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+            aria-label={`Move ${item.title || "press item"} earlier`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(index, 1)}
+            disabled={disabled || index === itemCount - 1}
+            className="rounded-md p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+            aria-label={`Move ${item.title || "press item"} later`}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="relative aspect-[3/4] w-full shrink-0 bg-gray-100">
         {item.image_url ? (
           <img src={item.image_url} alt="" className="h-full w-full object-cover" />
         ) : (
@@ -75,20 +314,12 @@ function PressItemCard({ item, onEdit, onDelete, onDragEnd }) {
             <ImagePlus className="h-8 w-8 opacity-20" />
           </div>
         )}
-        
-        {/* Drag handle overlay */}
-        <div 
-          className="absolute top-2 left-2 p-1.5 rounded-lg bg-black/40 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-          onPointerDown={(e) => dragControls.start(e)}
-        >
-          <GripVertical className="h-4 w-4" />
-        </div>
       </div>
       
       <div className="p-3 flex flex-col bg-white">
         <div className="mb-2">
           <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">{item.title || 'Untitled'}</h3>
-          <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">{item.publication || 'No publication'}</p>
+          <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">{getPressItemPublicationName(item) || 'No publication'}</p>
         </div>
         <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-1">
           <button
@@ -105,14 +336,17 @@ function PressItemCard({ item, onEdit, onDelete, onDragEnd }) {
           </button>
         </div>
       </div>
-    </Reorder.Item>
+    </article>
   );
 }
 
 export default function PressEditor() {
   const [items, setItems] = useState([]);
+  const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [draggingIndex, setDraggingIndex] = useState(null);
+  const [reordering, setReordering] = useState(false);
 
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -132,17 +366,38 @@ export default function PressEditor() {
 
   const fetchItems = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let itemsResult = await supabase
       .from("press_items")
-      .select("*")
+      .select("*, publication_record:press_publications(id, name, normalized_name)")
       .order("sort_order", { ascending: true })
       .order("published_date", { ascending: false });
 
-    if (error) {
+    if (MISSING_PUBLICATION_SCHEMA_CODES.includes(itemsResult.error?.code)) {
+      itemsResult = await supabase
+        .from("press_items")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("published_date", { ascending: false });
+    }
+
+    const publicationResult = await supabase
+      .from("press_publications")
+      .select("id, name, normalized_name")
+      .order("name", { ascending: true });
+
+    if (itemsResult.error) {
       notify("error", "Failed to fetch press items");
-      console.error(error);
+      console.error(itemsResult.error);
     } else {
-      setItems(data || []);
+      const nextItems = itemsResult.data || [];
+      setItems(nextItems);
+
+      if (publicationResult.error && !MISSING_PUBLICATION_SCHEMA_CODES.includes(publicationResult.error.code)) {
+        notify("error", "Failed to fetch publication names");
+        console.error(publicationResult.error);
+      }
+
+      setPublications(mergePublications(publicationResult.data || [], nextItems));
     }
     setLoading(false);
   };
@@ -153,9 +408,18 @@ export default function PressEditor() {
 
   const openForm = (item = null) => {
     if (item) {
-      setFormData({ ...item });
+      const relation = publicationRelation(item);
+      setFormData({
+        ...item,
+        publication: getPressItemPublicationName(item),
+        publication_id: item.publication_id || relation?.id || null,
+      });
     } else {
-      setFormData({ title: "", publication: "", image_url: "", link: "", published_date: "", sort_order: items.length });
+      const nextSortOrder = items.reduce(
+        (highest, item) => Math.max(highest, item.sort_order ?? -1),
+        -1
+      ) + 1;
+      setFormData({ title: "", publication: "", publication_id: null, image_url: "", link: "", published_date: "", sort_order: nextSortOrder });
     }
     setIsFormOpen(true);
   };
@@ -163,6 +427,48 @@ export default function PressEditor() {
   const closeForm = () => {
     setIsFormOpen(false);
     setFormData(null);
+  };
+
+  const resolvePublication = async (value) => {
+    const name = cleanPublicationName(value);
+    const normalizedName = normalizePublicationName(name);
+    if (!normalizedName) return null;
+
+    const cached = publications.find(
+      (publication) => publication.normalized_name === normalizedName && publication.id
+    );
+    if (cached) return cached;
+
+    const { data: existing, error: existingError } = await supabase
+      .from("press_publications")
+      .select("id, name, normalized_name")
+      .eq("normalized_name", normalizedName)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existing) return existing;
+
+    const { data: created, error: createError } = await supabase
+      .from("press_publications")
+      .insert({ name, normalized_name: normalizedName })
+      .select("id, name, normalized_name")
+      .single();
+
+    if (!createError) return created;
+
+    // Another admin may have created the same normalized name between the
+    // lookup and insert. Reuse that row instead of creating a duplicate.
+    if (createError.code === "23505") {
+      const { data: concurrent, error: concurrentError } = await supabase
+        .from("press_publications")
+        .select("id, name, normalized_name")
+        .eq("normalized_name", normalizedName)
+        .single();
+      if (concurrentError) throw concurrentError;
+      return concurrent;
+    }
+
+    throw createError;
   };
 
   const handleSave = async (e) => {
@@ -180,13 +486,25 @@ export default function PressEditor() {
 
     setSaving(true);
     try {
-      const payload = { ...formData, title: formData.title.trim() };
+      const publication = await resolvePublication(formData.publication);
+      const {
+        id,
+        created_at: _createdAt,
+        publication_record: _publicationRecord,
+        ...editableFields
+      } = formData;
+      const payload = {
+        ...editableFields,
+        title: formData.title.trim(),
+        publication: publication?.name || null,
+        publication_id: publication?.id || null,
+      };
       if (!payload.published_date) {
         payload.published_date = null;
       }
 
-      if (payload.id) {
-        const { error } = await supabase.from("press_items").update(payload).eq("id", payload.id);
+      if (id) {
+        const { error } = await supabase.from("press_items").update(payload).eq("id", id);
         if (error) throw error;
         notify("success", "Press item updated successfully");
       } else {
@@ -195,7 +513,7 @@ export default function PressEditor() {
         notify("success", "Press item added successfully");
       }
       closeForm();
-      fetchItems();
+      await fetchItems();
     } catch (err) {
       console.error(err);
       notify("error", err.message || "Failed to save press item");
@@ -217,32 +535,43 @@ export default function PressEditor() {
     }
   };
 
-  // Drag and drop reordering
-  const handleReorderChange = (newOrder) => {
-    setItems(newOrder);
-  };
-
-  const handleDragEnd = async () => {
+  const persistOrder = async (orderedItems) => {
+    const nextItems = orderedItems.map((item, index) => ({ ...item, sort_order: index }));
+    setItems(nextItems);
+    setReordering(true);
     try {
-      // Create a payload array with updated sort_order based on the new array indices
-      const updates = items.map((item, index) => ({
-        id: item.id,
-        title: item.title,
-        publication: item.publication,
-        link: item.link,
-        image_url: item.image_url,
-        published_date: item.published_date,
-        sort_order: index,
-      }));
-      
-      const { error } = await supabase.from("press_items").upsert(updates, { onConflict: 'id' });
-      if (error) throw error;
-      
+      const results = await Promise.all(nextItems.map((item) =>
+        supabase
+          .from("press_items")
+          .update({ sort_order: item.sort_order })
+          .eq("id", item.id)
+      ));
+      const failed = results.find((result) => result.error);
+      if (failed?.error) throw failed.error;
+      notify("success", "Press order saved");
     } catch (err) {
       console.error("Failed to save reorder", err);
       notify("error", "Failed to save new order");
-      fetchItems(); // revert to original order if failed
+      await fetchItems();
+    } finally {
+      setReordering(false);
     }
+  };
+
+  const handleDrop = async (dropIndex) => {
+    if (draggingIndex === null || draggingIndex === dropIndex || reordering) {
+      setDraggingIndex(null);
+      return;
+    }
+    const next = reorder(items, draggingIndex, dropIndex);
+    setDraggingIndex(null);
+    await persistOrder(next);
+  };
+
+  const moveItem = async (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length || reordering) return;
+    await persistOrder(reorder(items, index, targetIndex));
   };
 
   // Image Handlers
@@ -310,22 +639,23 @@ export default function PressEditor() {
             <p className="mt-1 text-sm text-gray-500">Get started by adding a new press article.</p>
           </div>
         ) : (
-          <Reorder.Group
-            axis="x"
-            values={items}
-            onReorder={handleReorderChange}
-            className="flex flex-wrap gap-6"
-          >
-            {items.map((item) => (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {items.map((item, index) => (
               <PressItemCard 
                 key={item.id} 
-                item={item} 
+                item={item}
+                index={index}
+                itemCount={items.length}
+                disabled={reordering}
                 onEdit={openForm} 
                 onDelete={handleDelete}
-                onDragEnd={handleDragEnd}
+                onDragStart={setDraggingIndex}
+                onDragEnd={() => setDraggingIndex(null)}
+                onDrop={handleDrop}
+                onMove={moveItem}
               />
             ))}
-          </Reorder.Group>
+          </div>
         )}
       </div>
 
@@ -372,15 +702,16 @@ export default function PressEditor() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Publication</label>
-                      <input
-                        type="text"
-                        value={formData?.publication || ""}
-                        onChange={(e) => setFormData({ ...formData, publication: e.target.value })}
-                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
-                      />
-                    </div>
+                    <PublicationField
+                      publications={publications}
+                      value={formData?.publication || ""}
+                      publicationId={formData?.publication_id || null}
+                      onChange={(publication, publicationId) => setFormData({
+                        ...formData,
+                        publication,
+                        publication_id: publicationId,
+                      })}
+                    />
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Published Date</label>
@@ -402,17 +733,6 @@ export default function PressEditor() {
                         placeholder="https://..."
                       />
                     </div>
-                    
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700">Sort Order</label>
-                      <input
-                        type="number"
-                        value={formData?.sort_order || 0}
-                        onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
-                      />
-                    </div>
-
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Image <span className="text-rose-600">*</span></label>
                       <p className="mb-3 text-xs text-gray-500">This image and title appear together on the public Press page.</p>

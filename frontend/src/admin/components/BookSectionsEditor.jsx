@@ -348,7 +348,7 @@ export default function BookSectionsEditor({ notify }) {
     try {
       replaceSections(await fetchBookSections());
     } catch (error) {
-      setLoadError(error.message || "Failed to load Books page sections");
+      setLoadError(error.message || "Failed to load blog post sections");
     } finally {
       setLoading(false);
     }
@@ -566,7 +566,7 @@ export default function BookSectionsEditor({ notify }) {
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Page sections</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Add text or images, then drag sections into the order they should appear on the Books page.
+              Add text or images, then drag sections into the order they should appear in the Trincas Timeline Project blog.
               {reordering ? " Saving order…" : ""}
             </p>
           </div>

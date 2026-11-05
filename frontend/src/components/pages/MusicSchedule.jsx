@@ -54,19 +54,23 @@ const MusicSchedule = () => {
     );
   }
 
+  const heroLayout = { lead_image_url: data?.layout?.lead_image_url || null };
+
   return (
     <main className="w-full min-h-screen bg-white flex flex-col justify-between text-gray-900">
       <PageContentLayout
         breadcrumbs={[
           { label: "Home", link: "/" },
           { label: "Music", link: "/music" },
-          { label: "Schedule" },
+          { label: "Music at Trincas" },
         ]}
-        layout={data?.layout}
+        layout={heroLayout}
         imageCards={data?.imageCards}
         instagramVideos={data?.instagramVideos}
         imageCardsTitle="Timeline"
         instagramTitle="Featured reels"
+        menuStyleLeadImage
+        leadImageAlt="Music at Trincas hero image"
       />
 
       <Footer />

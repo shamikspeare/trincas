@@ -2,11 +2,16 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import PageLayoutEditor from "../components/PageLayoutEditor";
-import { MUSIC_SCHEDULE_PAGE_KEY, MUSIC_TAVERN_SCHEDULE_PAGE_KEY } from "../../lib/pageLayouts";
+import {
+  MUSIC_PAGE_KEY,
+  MUSIC_SCHEDULE_PAGE_KEY,
+  MUSIC_TAVERN_SCHEDULE_PAGE_KEY,
+} from "../../lib/pageLayouts";
 
 const MUSIC_PAGES = [
-  { key: MUSIC_SCHEDULE_PAGE_KEY, title: "Music Schedule", desc: "Manage timeline cards and embedded Instagram reels for the Music Schedule page." },
-  { key: MUSIC_TAVERN_SCHEDULE_PAGE_KEY, title: "Tavern Schedule", desc: "Manage timeline cards and embedded Instagram reels for the Tavern Music Schedule page." },
+  { key: MUSIC_PAGE_KEY, title: "Main Music Page", desc: "Manage the hero image, timeline cards and reels for the main Music page." },
+  { key: MUSIC_SCHEDULE_PAGE_KEY, title: "Music at Trincas", desc: "Manage the hero image, timeline cards and reels for Music at Trincas." },
+  { key: MUSIC_TAVERN_SCHEDULE_PAGE_KEY, title: "Music at Tavern", desc: "Manage the hero image, timeline cards and reels for Music at Tavern." },
 ];
 
 function Toast({ toast }) {
@@ -42,8 +47,8 @@ export default function MusicEditor() {
   return (
     <div className="min-h-screen bg-gray-50 px-10 py-8">
       <AnimatePresence>{toast ? <Toast toast={toast} /> : null}</AnimatePresence>
-      <h1 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Music Schedules</h1>
-      <p className="mt-1 text-base text-gray-500 sm:text-lg">Manage the content for the dynamic music schedule pages.</p>
+      <h1 className="text-3xl font-semibold text-gray-900 sm:text-4xl">Music Pages</h1>
+      <p className="mt-1 text-base text-gray-500 sm:text-lg">Manage hero images, timeline cards and reels.</p>
       
       <div className="mt-6 flex flex-wrap gap-2">
         {MUSIC_PAGES.map((page) => (
@@ -69,11 +74,17 @@ export default function MusicEditor() {
           pageKey={activePage.key}
           title={activePage.title}
           notify={notify}
+          leadImageTitle="Hero Image"
+          leadImageLabel="Upload hero image"
+          leadImageHelpText="Upload one vertical image. A 9:16 Instagram Story image is recommended; it appears using the same full-width layout as the Food menu images."
+          leadImageFirst
+          leadImageAspect={9 / 16}
+          leadImagePreviewRatio="aspect-[9/16]"
           imageCardTitle="Timeline cards"
           imageCardItemLabel="Timeline card"
           addImageCardLabel="Add timeline card"
-          imageCardNameLabel="Timeline card name"
-          imageCardNamePlaceholder="e.g. Friday, 10 October"
+          imageCardNameLabel="Timeline title"
+          imageCardNamePlaceholder="Enter an optional timeline title"
         />
       </div>
     </div>

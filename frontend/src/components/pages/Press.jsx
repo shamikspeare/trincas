@@ -1,22 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { X, ExternalLink } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronDown, X, ExternalLink } from 'lucide-react';
 import Breadcrumb from '../Breadcrumb';
 import { supabase } from '../../lib/supabase';
+import {
+  buildPublicationOptions,
+  getPressItemPublicationName,
+  normalizePublicationName,
+} from '../../lib/pressPublications';
+
+const ALL_PUBLICATIONS = 'all';
 
 const Press = () => {
   const [pressItems, setPressItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItemIndex, setSelectedItemIndex] = useState(null);
+  const [selectedPublication, setSelectedPublication] = useState(ALL_PUBLICATIONS);
+  const [selectedItemId, setSelectedItemId] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     const fetchPressItems = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      let result = await supabase
         .from('press_items')
-        .select('*')
+        .select('*, publication_record:press_publications(id, name, normalized_name)')
         .order('sort_order', { ascending: true })
         .order('published_date', { ascending: false });
+
+      // Keep the page usable while an older environment is waiting for the
+      // publication-registry migration to be applied.
+      if (['42703', 'PGRST200', 'PGRST205'].includes(result.error?.code)) {
+        result = await supabase
+          .from('press_items')
+          .select('*')
+          .order('sort_order', { ascending: true })
+          .order('published_date', { ascending: false });
+      }
+
+      const { data, error } = result;
         
       if (!error && data) {
         setPressItems(data);
@@ -29,8 +49,27 @@ const Press = () => {
     fetchPressItems();
   }, []);
 
-  const openModal = (index) => {
-    setSelectedItemIndex(index);
+  const publicationOptions = useMemo(() => buildPublicationOptions(pressItems), [pressItems]);
+  const filteredItems = useMemo(
+    () => selectedPublication === ALL_PUBLICATIONS
+      ? pressItems
+      : pressItems.filter(
+        (item) => normalizePublicationName(getPressItemPublicationName(item)) === selectedPublication
+      ),
+    [pressItems, selectedPublication]
+  );
+
+  useEffect(() => {
+    if (
+      selectedPublication !== ALL_PUBLICATIONS
+      && !publicationOptions.some((publication) => publication.key === selectedPublication)
+    ) {
+      setSelectedPublication(ALL_PUBLICATIONS);
+    }
+  }, [publicationOptions, selectedPublication]);
+
+  const openModal = (id) => {
+    setSelectedItemId(id);
     requestAnimationFrame(() => {
       setIsAnimating(true);
     });
@@ -38,18 +77,18 @@ const Press = () => {
 
   const closeModal = () => {
     setIsAnimating(false);
-    setTimeout(() => setSelectedItemIndex(null), 300);
+    setTimeout(() => setSelectedItemId(null), 300);
   };
 
   useEffect(() => {
-    if (selectedItemIndex !== null) {
+    if (selectedItemId !== null) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
 
     const handleKeyDown = (e) => {
-      if (selectedItemIndex === null) return;
+      if (selectedItemId === null) return;
       if (e.key === 'Escape') closeModal();
     };
 
@@ -59,13 +98,15 @@ const Press = () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedItemIndex]);
+  }, [selectedItemId]);
 
-  const selectedItem = selectedItemIndex !== null ? pressItems[selectedItemIndex] : null;
+  const selectedItem = selectedItemId !== null
+    ? pressItems.find((item) => item.id === selectedItemId)
+    : null;
 
   return (
     <main className="w-full bg-white min-h-screen grid">
-      {selectedItemIndex === null && (
+      {selectedItemId === null && (
         <div className="col-start-1 row-start-1 w-full z-40 pointer-events-none">
           <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'Press' }]} />
         </div>
@@ -81,6 +122,28 @@ const Press = () => {
             A curated archive of media features, editorial highlights, and press coverage.
             Documenting our work and milestones as published across global outlets.
           </p>
+
+          <div className="mx-auto mt-6 flex w-full max-w-xs flex-col items-start gap-1.5 text-left">
+            <label htmlFor="press-publication-filter" className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Filter by publication
+            </label>
+            <div className="relative w-full">
+              <select
+                id="press-publication-filter"
+                value={selectedPublication}
+                onChange={(event) => setSelectedPublication(event.target.value)}
+                className="w-full appearance-none rounded-full border border-gray-300 bg-white py-2.5 pl-4 pr-10 text-sm text-gray-800 shadow-sm outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+              >
+                <option value={ALL_PUBLICATIONS}>All Publications</option>
+                {publicationOptions.map((publication) => (
+                  <option key={publication.key} value={publication.key}>
+                    {publication.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" aria-hidden="true" />
+            </div>
+          </div>
         </div>
 
         {/* Gallery */}
@@ -93,13 +156,17 @@ const Press = () => {
             <div className="text-center text-sm text-gray-500 mt-10">
               No press items available yet.
             </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="text-center text-sm text-gray-500 mt-10">
+              No press items are available for this publication yet.
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-6">
-              {pressItems.map((item, index) => (
+              {filteredItems.map((item, index) => (
                 <div
                   key={item.id}
                   className="relative overflow-hidden rounded-2xl aspect-[3/4] cursor-pointer bg-gray-100 shadow-sm group"
-                  onClick={() => openModal(index)}
+                  onClick={() => openModal(item.id)}
                 >
                   {item.image_url && (
                     <img
@@ -133,7 +200,7 @@ const Press = () => {
                   {/* Text Overlay */}
                   <div className="absolute bottom-4 left-4 right-4 text-white z-10 pointer-events-none">
                     <p className="text-[10px] uppercase tracking-wider font-semibold opacity-80 mb-1 line-clamp-1">
-                      {item.publication}
+                      {getPressItemPublicationName(item)}
                     </p>
                     <h3 className="text-sm font-medium leading-snug line-clamp-3 drop-shadow-md">
                       {item.title}
@@ -146,7 +213,7 @@ const Press = () => {
         </div>
 
         {/* Modal – mobile only (though this style works on desktop too) */}
-        {selectedItemIndex !== null && selectedItem && (
+        {selectedItemId !== null && selectedItem && (
           <div
             className={`fixed inset-0 z-50 flex flex-col items-center pt-[74px] pb-6 px-4 bg-black/90 backdrop-blur-md transition-opacity duration-300 overflow-y-auto ${
               isAnimating ? 'opacity-100' : 'opacity-0'
@@ -184,9 +251,9 @@ const Press = () => {
               )}
 
               <div className={`mt-6 text-center text-white w-full px-4 transition-all duration-500 delay-100 ${isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                {selectedItem.publication && (
+                {getPressItemPublicationName(selectedItem) && (
                   <p className="text-xs uppercase tracking-widest text-white/70 font-semibold mb-2">
-                    {selectedItem.publication}
+                    {getPressItemPublicationName(selectedItem)}
                   </p>
                 )}
                 

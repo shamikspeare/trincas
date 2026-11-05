@@ -30,26 +30,24 @@ const historySubpages = Array.from(
 const SUBPAGES_CONFIG = {
   dining: [
     { value: "/dining/trincas", label: "Trincas" },
-    { value: "/dining/the-other-room", label: "The Other Room" },
     { value: "/dining/tavern", label: "Tavern" },
+    { value: "/dining/the-other-room", label: "The Other Room" },
     { value: "/dining/ming-room", label: "Ming Room" },
   ],
   food: [
     { value: "/food/indian", label: "Indian" },
     { value: "/food/continental", label: "Continental" },
     { value: "/food/chinese", label: "Chinese" },
+    { value: "/food/desserts", label: "Desserts" },
     { value: "/food/drinks", label: "Drinks" },
     { value: "/food/cafe", label: "Cafe" },
   ],
   music: [
-    { value: "/music-schedule", label: "Trincas Music Schedule" },
-    { value: "/music-tavern-schedule", label: "Tavern Music Schedule" },
+    { value: "/music-schedule", label: "Music at Trincas" },
+    { value: "/music-tavern-schedule", label: "Music at Tavern" },
     { value: "/music-legacy", label: "Music Legacy" },
   ],
   history: historySubpages,
-  pride: [
-    { value: "/pride-lgbtq", label: "LGBTQ" },
-  ]
 };
 
 const PAGES = [
@@ -59,8 +57,7 @@ const PAGES = [
   { value: "music", label: "Music", path: "/music" },
   { value: "history", label: "History", path: "/history" },
   { value: "press", label: "Press", path: "/press" },
-  { value: "pride", label: "Pride", path: "/pride" },
-  { value: "book", label: "Books", path: "/book" },
+  { value: "book", label: "Book & Blog", path: "/book" },
 ];
 
 const ALLOWED_PROTOCOLS = ["http:", "https:", "mailto:", "tel:"];

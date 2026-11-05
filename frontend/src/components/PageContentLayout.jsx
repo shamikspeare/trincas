@@ -29,6 +29,28 @@ function SectionHeading({ children }) {
   );
 }
 
+function MenuStyleLeadImage({ src, alt, emptyText }) {
+  return (
+    <motion.section variants={sectionVariants} className="mt-2 w-full">
+      {src ? (
+        <div className="w-full overflow-hidden rounded-lg">
+          <img
+            src={src}
+            alt={alt}
+            className="h-auto w-full object-contain"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+      ) : (
+        <div className="flex aspect-[9/16] w-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50/60 px-6 text-center text-gray-500">
+          <p className="text-sm sm:text-base">{emptyText}</p>
+        </div>
+      )}
+    </motion.section>
+  );
+}
+
 function ImageCarousel({ cards, title }) {
   if (!cards.length) return null;
   return (
@@ -73,12 +95,16 @@ export default function PageContentLayout({
   embedded = false,
   backgroundClass = "bg-white",
   textColorClass = "text-[#514638]",
+  menuStyleLeadImage = false,
+  leadImageAlt = "Page hero image",
+  leadImageEmptyText = "Add hero image to show here",
 }) {
   const sanitizedBody = sanitizeHtml(layout?.body || "");
 
   const hasContent = Boolean(
     layout?.heading ||
     layout?.lead_image_url ||
+    menuStyleLeadImage ||
     sanitizedBody ||
     imageCards.length > 0 ||
     instagramVideos.length > 0
@@ -91,7 +117,7 @@ export default function PageContentLayout({
       {breadcrumbs?.length ? <Breadcrumb items={breadcrumbs} /> : null}
       {hasContent ? (
         <motion.div
-          className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8"
+          className={`mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6 lg:px-8 ${menuStyleLeadImage ? "pb-16" : "pb-8"}`}
           variants={pageVariants}
           initial="hidden"
           animate="visible"
@@ -102,10 +128,16 @@ export default function PageContentLayout({
             </motion.header>
           ) : null}
 
-          {layout?.lead_image_url ? (
-            <motion.section variants={sectionVariants} className="mx-auto mt-4 max-w-5xl overflow-hidden rounded-[22px]">
-              <img src={layout.lead_image_url} alt="" className="h-auto w-full object-cover" loading="eager" decoding="async" />
-            </motion.section>
+          {menuStyleLeadImage ? (
+            <MenuStyleLeadImage
+              src={layout?.lead_image_url}
+              alt={leadImageAlt}
+              emptyText={leadImageEmptyText}
+            />
+          ) : layout?.lead_image_url ? (
+              <motion.section variants={sectionVariants} className="mx-auto mt-4 max-w-5xl overflow-hidden rounded-[22px]">
+                <img src={layout.lead_image_url} alt={leadImageAlt} className="h-auto w-full object-cover" loading="eager" decoding="async" />
+              </motion.section>
           ) : null}
 
           {sanitizedBody ? (

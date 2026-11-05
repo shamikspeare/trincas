@@ -57,12 +57,12 @@ export default function Music() {
 
   const musicSubPages = [
     {
-      heading: "Trincas Music Schedule",
+      heading: "Music at Trincas",
       image: trincasMusicScheduleImage,
       link: "/music-schedule",
     },
     {
-      heading: "Tavern Music Schedule",
+      heading: "Music at Tavern",
       image: tavernMusicScheduleImage,
       link: "/music-tavern-schedule",
     },
@@ -73,15 +73,21 @@ export default function Music() {
     },
   ];
 
+  const heroLayout = {
+    lead_image_url: data?.layout?.lead_image_url || null,
+  };
+
   return (
     <>
       <PageContentLayout
         breadcrumbs={[{ label: "Home", link: "/" }, { label: "Music" }]}
-        layout={data?.layout}
+        layout={heroLayout}
         imageCards={data?.imageCards}
         instagramVideos={data?.instagramVideos}
         imageCardsTitle="Music Highlights"
         instagramTitle="On Instagram"
+        menuStyleLeadImage
+        leadImageAlt="Music hero image"
       />
 
       <section className="mx-auto w-full max-w-5xl px-4 pt-4 pb-14 sm:px-6 lg:px-8">

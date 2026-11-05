@@ -32,9 +32,9 @@ const BUCKET = "dining";
 // Fixed rooms — rows already exist in `dining`, no add/rename/delete from here.
 const ROOMS = [
   { name: "Trincas", slug: "trincas" },
+  { name: "Tavern", slug: "tavern" },
   { name: "The Other Room", slug: "the-other-room" },
   { name: "Ming Room", slug: "ming-room" },
-  { name: "Tavern", slug: "tavern" },
 ];
 
 function tempId() {

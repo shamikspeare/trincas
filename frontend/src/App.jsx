@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Link, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Link, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { Home } from "lucide-react";
 
 import ScrollToTop from "./components/ScrollToTop";
@@ -16,8 +16,6 @@ import History from "./components/pages/History";
 import HistoryTimeline from "./components/HistoryTimeline";
 import HistoryYearPage from "./components/pages/HistoryYearPage";
 import Press from "./components/pages/Press";
-import Pride from "./components/pages/Pride";
-import PrideLgbtqSubPage from "./components/pages/PrideLgbtqSubPage";
 import Book from "./components/pages/Book";
 
 import Dashboard from "./admin/Dashboard";
@@ -85,6 +83,10 @@ function AppLayout() {
             path="/food-cafe"
             element={<FoodSubPage title="Cafe" basePath="/food-cafe" />}
           />
+          <Route
+            path="/food-desserts"
+            element={<FoodSubPage title="Desserts" basePath="/food-desserts" />}
+          />
 
           <Route path="/music" element={<Music />} />
           <Route path="/music-schedule" element={<MusicSchedule />} />
@@ -97,8 +99,8 @@ function AppLayout() {
           <Route path="/history/:decade" element={<HistoryYearPage />} />
 
           <Route path="/press" element={<Press />} />
-          <Route path="/pride" element={<Pride />} />
-          <Route path="/pride-lgbtq" element={<PrideLgbtqSubPage />} />
+          <Route path="/pride" element={<Navigate to="/" replace />} />
+          <Route path="/pride-lgbtq" element={<Navigate to="/" replace />} />
           <Route path="/book" element={<Book />} />
 
           <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />

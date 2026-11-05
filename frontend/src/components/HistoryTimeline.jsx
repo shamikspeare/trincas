@@ -33,7 +33,7 @@ const HistoryTimeline = () => {
   return (
     <main className="w-full bg-white min-h-[60vh]">
       <div className="pointer-events-none w-full">
-        <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'History' }]} />
+        <Breadcrumb items={[{ label: 'Home', link: '/' }, { label: 'All The Performers Ever' }]} />
       </div>
       <div className="w-full">
         <ScrollCircle />

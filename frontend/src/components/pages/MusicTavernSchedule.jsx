@@ -26,15 +26,19 @@ export default function MusicTavernSchedule() {
   if (loading) return <main className="min-h-[60vh] bg-white flex items-center justify-center text-gray-400">loading...</main>;
   if (error) return <main className="min-h-[60vh] bg-white flex flex-col items-center justify-center gap-3 px-4 text-center"><p className="text-gray-500">Failed to load the page.</p><button type="button" onClick={load} className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm"><RefreshCw className="h-4 w-4" />Try again</button></main>;
 
+  const heroLayout = { lead_image_url: data?.layout?.lead_image_url || null };
+
   return (
     <main className="min-h-screen bg-white text-gray-900 flex flex-col justify-between">
       <PageContentLayout
-        breadcrumbs={[{ label: "Home", link: "/" }, { label: "Music", link: "/music" }, { label: "Tavern Music Schedule" }]}
-        layout={data?.layout}
+        breadcrumbs={[{ label: "Home", link: "/" }, { label: "Music", link: "/music" }, { label: "Music at Tavern" }]}
+        layout={heroLayout}
         imageCards={data?.imageCards}
         instagramVideos={data?.instagramVideos}
         imageCardsTitle="Timeline"
         instagramTitle="Featured reels"
+        menuStyleLeadImage
+        leadImageAlt="Music at Tavern hero image"
       />
       <Footer />
     </main>

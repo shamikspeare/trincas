@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { GripVertical, ImagePlus, Pencil, Play, Loader2, Save, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, GripVertical, ImagePlus, Pencil, Play, Loader2, Save, Trash2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-import { fetchPageLayout, normalizeInstagramUrl } from "../../lib/pageLayouts";
+import { fetchPageLayout, mergePageMediaItems, normalizeInstagramUrl } from "../../lib/pageLayouts";
 import { sanitizeHtml } from "../../lib/sanitize";
 import ImageUploadSummaryMessage from "./ImageUploadSummaryMessage";
 import { IMAGE_ACCEPT, getImageProcessingSummary, processImage, validateImage } from "../utils/processImage";
@@ -22,21 +22,43 @@ async function uploadPageImage(file, pageKey, options = {}) {
   if (error) throw error;
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   if (!data?.publicUrl) throw new Error("Could not create an image URL");
-  return { publicUrl: data.publicUrl, summary };
+  return { publicUrl: data.publicUrl, storagePath: path, summary };
 }
 
-function ImageSlot({ src, label, busy, onSelect, onRemove, ratio = "aspect-[16/10]" }) {
+function pageContentStoragePath(publicUrl) {
+  if (!publicUrl) return null;
+  try {
+    const marker = `/storage/v1/object/public/${BUCKET}/`;
+    const pathname = new URL(publicUrl).pathname;
+    const markerIndex = pathname.indexOf(marker);
+    if (markerIndex < 0) return null;
+    return decodeURIComponent(pathname.slice(markerIndex + marker.length));
+  } catch {
+    return null;
+  }
+}
+
+async function removePageImage(publicUrlOrPath) {
+  const path = publicUrlOrPath?.startsWith?.("http")
+    ? pageContentStoragePath(publicUrlOrPath)
+    : publicUrlOrPath;
+  if (!path) return;
+  const { error } = await supabase.storage.from(BUCKET).remove([path]);
+  if (error) throw error;
+}
+
+function ImageSlot({ src, label, busy, onSelect, onRemove, ratio = "aspect-[16/10]", fit = "cover" }) {
   const inputRef = useRef(null);
   return (
     <div className={`group relative w-full overflow-hidden rounded-xl bg-gray-100 ${ratio}`}>
-      {src ? <img src={src} alt="" className="h-full w-full object-cover" /> : (
+      {src ? <img src={src} alt="" className={`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`} /> : (
         <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-gray-400">
           <ImagePlus className="h-6 w-6" />
           <span className="text-xs">{label}</span>
         </div>
       )}
       {busy ? <div className="absolute inset-0 flex items-center justify-center bg-black/40"><Loader2 className="h-5 w-5 animate-spin text-white" /></div> : (
-        <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 transition-opacity group-hover:bg-black/40 group-hover:opacity-100">
+        <div className={`absolute inset-0 flex items-center justify-center gap-2 transition-opacity sm:group-focus-within:bg-black/40 sm:group-focus-within:opacity-100 sm:group-hover:bg-black/40 sm:group-hover:opacity-100 ${src ? "bg-black/25 opacity-100 sm:bg-transparent sm:opacity-0" : "opacity-100"}`}>
           <button type="button" onClick={() => inputRef.current?.click()} className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-gray-800 shadow">
             {src ? "Replace" : "Upload"}
           </button>
@@ -59,6 +81,10 @@ function reorder(items, from, to) {
   return next;
 }
 
+function nextDisplayOrder(items) {
+  return items.reduce((highest, item) => Math.max(highest, item.display_order ?? -1), -1) + 1;
+}
+
 export default function PageLayoutEditor({
   pageKey,
   title,
@@ -68,6 +94,12 @@ export default function PageLayoutEditor({
   addImageCardLabel,
   imageCardNameLabel,
   imageCardNamePlaceholder,
+  leadImageTitle = "Lead image",
+  leadImageLabel = "Upload lead image",
+  leadImageHelpText,
+  leadImageFirst = false,
+  leadImageAspect = null,
+  leadImagePreviewRatio = "aspect-[16/10]",
 }) {
   const [layout, setLayout] = useState(null);
   const [imageCards, setImageCards] = useState([]);
@@ -81,6 +113,11 @@ export default function PageLayoutEditor({
   const [error, setError] = useState(null);
   const [cropTarget, setCropTarget] = useState(null);
   const [dragging, setDragging] = useState(null);
+  const isFoodPage = Boolean(pageKey?.startsWith("food:"));
+  const foodAndVibeItems = useMemo(
+    () => mergePageMediaItems(imageCards, instagramVideos),
+    [imageCards, instagramVideos]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -143,16 +180,27 @@ export default function PageLayoutEditor({
     if (!cropTarget) return;
     setUploading(true);
     try {
-      const { publicUrl: imageUrl, summary } = await uploadPageImage(cropTarget.file, pageKey, options);
+      const { publicUrl: imageUrl, storagePath, summary } = await uploadPageImage(cropTarget.file, pageKey, options);
       if (cropTarget.target.kind === "lead") {
+        const previousImageUrl = layout?.lead_image_url;
         const { error: updateError } = await supabase.from("page_layouts").update({ lead_image_url: imageUrl }).eq("page_key", pageKey);
-        if (updateError) throw updateError;
+        if (updateError) {
+          await removePageImage(storagePath).catch(() => {});
+          throw updateError;
+        }
+        if (previousImageUrl && previousImageUrl !== imageUrl) {
+          try {
+            await removePageImage(previousImageUrl);
+          } catch {
+            notify?.("error", "The hero was replaced, but its old file could not be deleted");
+          }
+        }
       } else if (cropTarget.target.kind === "image-card-add") {
         const { error: insertError } = await supabase.from("page_image_cards").insert({
           page_key: pageKey,
           image_url: imageUrl,
           alt_text: "",
-          display_order: imageCards.length,
+          display_order: nextDisplayOrder(isFoodPage ? foodAndVibeItems : imageCards),
         });
         if (insertError) throw insertError;
       } else {
@@ -170,7 +218,15 @@ export default function PageLayoutEditor({
   }
 
   async function removeLeadImage() {
-    await saveFields({ lead_image_url: null }, "Lead image removed");
+    const previousImageUrl = layout?.lead_image_url;
+    const saved = await saveFields({ lead_image_url: null }, `${leadImageTitle} removed`);
+    if (saved && previousImageUrl) {
+      try {
+        await removePageImage(previousImageUrl);
+      } catch (err) {
+        notify?.("error", err.message || "The hero was removed, but its old file could not be deleted");
+      }
+    }
   }
 
   async function removeImageCard(id) {
@@ -218,6 +274,44 @@ export default function PageLayoutEditor({
     await persistOrder("page_image_cards", next);
   }
 
+  async function persistFoodAndVibeOrder(orderedItems) {
+    const nextItems = orderedItems.map((item, index) => ({ ...item, display_order: index }));
+    setImageCards(nextItems.filter((item) => item.kind === "image"));
+    setInstagramVideos(nextItems.filter((item) => item.kind === "instagram"));
+    setSaving(true);
+
+    try {
+      const results = await Promise.all(nextItems.map((item) =>
+        supabase
+          .from(item.kind === "image" ? "page_image_cards" : "page_instagram_videos")
+          .update({ display_order: item.display_order })
+          .eq("id", item.id)
+      ));
+      const failed = results.find((result) => result.error);
+      if (failed?.error) throw failed.error;
+      notify?.("success", "Food & Vibe order saved");
+      await load();
+    } catch (err) {
+      notify?.("error", err.message || "Failed to save the Food & Vibe order");
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleFoodAndVibeDrop(dropIndex) {
+    if (dragging?.type !== "food-vibe" || dragging.index === dropIndex) return;
+    const next = reorder(foodAndVibeItems, dragging.index, dropIndex);
+    setDragging(null);
+    await persistFoodAndVibeOrder(next);
+  }
+
+  async function moveFoodAndVibeItem(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= foodAndVibeItems.length) return;
+    await persistFoodAndVibeOrder(reorder(foodAndVibeItems, index, targetIndex));
+  }
+
   async function addInstagramVideo() {
     const instagramUrl = normalizeInstagramUrl(newInstagramUrl);
     if (!instagramUrl) {
@@ -229,7 +323,7 @@ export default function PageLayoutEditor({
       const { error: insertError } = await supabase.from("page_instagram_videos").insert({
         page_key: pageKey,
         instagram_url: instagramUrl,
-        display_order: instagramVideos.length,
+        display_order: nextDisplayOrder(isFoodPage ? foodAndVibeItems : instagramVideos),
       });
       if (insertError) throw insertError;
       setNewInstagramUrl("");
@@ -276,15 +370,32 @@ export default function PageLayoutEditor({
     await persistOrder("page_instagram_videos", next);
   }
 
-  const isFoodPage = Boolean(pageKey?.startsWith("food:"));
   const isMusicPage = Boolean(pageKey?.startsWith("music"));
-  const hideHeadingTextLead = isFoodPage || isMusicPage;
+  const hideHeadingText = isFoodPage || isMusicPage;
+  const showLeadImage = !isFoodPage;
 
   const cardSectionTitle = imageCardTitle || (isFoodPage ? "Feature dishes" : isMusicPage ? "Schedule cards" : "Image cards");
   const cardItemLabel = imageCardItemLabel || (isFoodPage ? "Feature dish" : isMusicPage ? "Schedule card" : "Image card");
   const addCardLabel = addImageCardLabel || (isFoodPage ? "Add feature dish" : isMusicPage ? "Add schedule card" : "Add image card");
   const cardNameLabel = imageCardNameLabel || (isFoodPage ? "Dish name" : "Card title");
   const cardNamePlaceholder = imageCardNamePlaceholder || (isFoodPage ? "Enter the dish name" : "Enter a card title (optional)");
+  const leadImageSection = showLeadImage ? (
+    <section>
+      <h4 className="text-lg font-semibold text-gray-900">{leadImageTitle}</h4>
+      {leadImageHelpText ? <p className="mt-1 text-sm text-gray-500">{leadImageHelpText}</p> : null}
+      <div className="mt-3 max-w-xs">
+        <ImageSlot
+          src={layout?.lead_image_url}
+          label={leadImageLabel}
+          busy={uploading}
+          onSelect={(file) => openCrop(file, { kind: "lead" })}
+          onRemove={removeLeadImage}
+          ratio={leadImagePreviewRatio}
+          fit="contain"
+        />
+      </div>
+    </section>
+  ) : null;
 
   if (loading) return <div className="flex items-center gap-2 py-6 text-sm text-gray-400"><Loader2 className="h-4 w-4 animate-spin" />Loading {title}…</div>;
   if (error) return <div className="rounded-lg border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">{error}<button onClick={load} className="ml-3 font-medium underline">Retry</button></div>;
@@ -296,7 +407,9 @@ export default function PageLayoutEditor({
         <p className="mt-1 text-sm text-gray-500">Content appears in the same order on the public page.</p>
       </div>
 
-      {!hideHeadingTextLead && (
+      {leadImageFirst ? leadImageSection : null}
+
+      {!hideHeadingText && (
         <section>
           <h4 className="text-lg font-semibold text-gray-900">Heading and paragraphs</h4>
           {isTextEditing ? (
@@ -321,48 +434,115 @@ export default function PageLayoutEditor({
         </section>
       )}
 
-      {!hideHeadingTextLead && (
+      {!leadImageFirst ? leadImageSection : null}
+
+      {isFoodPage ? (
         <section>
-          <h4 className="text-lg font-semibold text-gray-900">Lead image</h4>
-          <div className="mt-3 max-w-xl"><ImageSlot src={layout?.lead_image_url} label="Upload lead image" busy={uploading} onSelect={(file) => openCrop(file, { kind: "lead" })} onRemove={removeLeadImage} /></div>
+          <h4 className="text-lg font-semibold text-gray-900">Food &amp; Vibe</h4>
+          <p className="mt-1 text-sm text-gray-500">
+            Photos and Instagram reels share one row. Drag them, or use the arrow buttons, to set the public display order.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <input value={newInstagramUrl} onChange={(event) => setNewInstagramUrl(event.target.value)} placeholder="https://www.instagram.com/reel/..." className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
+            <button type="button" onClick={addInstagramVideo} disabled={saving} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Play className="h-4 w-4" />Add reel</button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {foodAndVibeItems.map((item, index) => (
+              <div
+                key={`${item.kind}-${item.id}`}
+                draggable={!saving}
+                onDragStart={() => setDragging({ type: "food-vibe", index })}
+                onDragEnd={() => setDragging(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={() => handleFoodAndVibeDrop(index)}
+                className="rounded-xl border border-gray-200 bg-white p-3"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="h-4 w-4 cursor-grab text-gray-300" />
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-600">
+                      {item.kind === "image" ? "Photo" : "Reel"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => moveFoodAndVibeItem(index, -1)} disabled={saving || index === 0} className="rounded-md p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30" aria-label={`Move ${item.kind === "image" ? "photo" : "reel"} earlier`}><ChevronLeft className="h-4 w-4" /></button>
+                    <button type="button" onClick={() => moveFoodAndVibeItem(index, 1)} disabled={saving || index === foodAndVibeItems.length - 1} className="rounded-md p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30" aria-label={`Move ${item.kind === "image" ? "photo" : "reel"} later`}><ChevronRight className="h-4 w-4" /></button>
+                  </div>
+                </div>
+
+                {item.kind === "image" ? (
+                  <>
+                    <ImageSlot src={item.image_url} label={cardItemLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card", id: item.id })} onRemove={() => removeImageCard(item.id)} />
+                    <label className="mt-3 block text-xs font-medium text-gray-600" htmlFor={`image-card-name-${item.id}`}>{cardNameLabel}</label>
+                    <input id={`image-card-name-${item.id}`} defaultValue={item.alt_text || ""} onBlur={(event) => updateImageAlt(item, event.target.value)} placeholder={cardNamePlaceholder} className="mt-1 w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
+                  </>
+                ) : (
+                  <>
+                    <div className="flex aspect-square items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-100 via-rose-50 to-amber-100 text-rose-500">
+                      <Play className="h-9 w-9" />
+                    </div>
+                    <label className="mt-3 block text-xs font-medium text-gray-600" htmlFor={`instagram-video-${item.id}`}>Instagram reel URL</label>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <input id={`instagram-video-${item.id}`} defaultValue={item.instagram_url} onBlur={(event) => updateInstagramVideo(item, event.target.value)} className="min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
+                      <button type="button" onClick={() => removeInstagramVideo(item.id)} disabled={saving} className="rounded-md p-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-50" aria-label="Remove Instagram reel"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+
+            <div className="rounded-xl border border-dashed border-gray-200 p-3">
+              <ImageSlot src={null} label={addCardLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card-add" })} />
+            </div>
+          </div>
         </section>
+      ) : (
+        <>
+          <section>
+            <h4 className="text-lg font-semibold text-gray-900">{cardSectionTitle}</h4>
+            <p className="mt-1 text-sm text-gray-500">Drag cards to set their horizontal display order.</p>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {imageCards.map((card, index) => (
+                <div key={card.id} draggable onDragStart={() => setDragging({ type: "image", index })} onDragOver={(event) => event.preventDefault()} onDrop={() => handleImageDrop(index)} className="rounded-xl border border-gray-200 p-3">
+                  <GripVertical className="mb-2 h-4 w-4 cursor-grab text-gray-300" />
+                  <ImageSlot src={card.image_url} label={cardItemLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card", id: card.id })} onRemove={() => removeImageCard(card.id)} />
+                  <label className="mt-3 block text-xs font-medium text-gray-600" htmlFor={`image-card-name-${card.id}`}>{cardNameLabel}</label>
+                  <input id={`image-card-name-${card.id}`} defaultValue={card.alt_text || ""} onBlur={(event) => updateImageAlt(card, event.target.value)} placeholder={cardNamePlaceholder} className="mt-1 w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
+                </div>
+              ))}
+              <ImageSlot src={null} label={addCardLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card-add" })} />
+            </div>
+          </section>
+
+          <section>
+            <h4 className="text-lg font-semibold text-gray-900">Instagram reels</h4>
+            <p className="mt-1 text-sm text-gray-500">Paste a reel link. Its Instagram preview plays directly on the public page.</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input value={newInstagramUrl} onChange={(event) => setNewInstagramUrl(event.target.value)} placeholder="https://www.instagram.com/reel/..." className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
+              <button type="button" onClick={addInstagramVideo} disabled={saving} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Play className="h-4 w-4" />Add reel</button>
+            </div>
+            <div className="mt-4 space-y-2">
+              {instagramVideos.map((video, index) => (
+                <div key={video.id} draggable onDragStart={() => setDragging({ type: "instagram", index })} onDragOver={(event) => event.preventDefault()} onDrop={() => handleInstagramDrop(index)} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                  <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-gray-300" />
+                  <input defaultValue={video.instagram_url} onBlur={(event) => updateInstagramVideo(video, event.target.value)} className="min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
+                  <button type="button" onClick={() => removeInstagramVideo(video.id)} disabled={saving} className="rounded-md p-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-50" aria-label="Remove Instagram reel"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
       )}
 
-      <section>
-        <h4 className="text-lg font-semibold text-gray-900">{cardSectionTitle}</h4>
-        <p className="mt-1 text-sm text-gray-500">Drag cards to set their horizontal display order.</p>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {imageCards.map((card, index) => (
-            <div key={card.id} draggable onDragStart={() => setDragging({ type: "image", index })} onDragOver={(event) => event.preventDefault()} onDrop={() => handleImageDrop(index)} className="rounded-xl border border-gray-200 p-3">
-              <GripVertical className="mb-2 h-4 w-4 cursor-grab text-gray-300" />
-              <ImageSlot src={card.image_url} label={cardItemLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card", id: card.id })} onRemove={() => removeImageCard(card.id)} />
-              <label className="mt-3 block text-xs font-medium text-gray-600" htmlFor={`image-card-name-${card.id}`}>{cardNameLabel}</label>
-              <input id={`image-card-name-${card.id}`} defaultValue={card.alt_text || ""} onBlur={(event) => updateImageAlt(card, event.target.value)} placeholder={cardNamePlaceholder} className="mt-1 w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
-            </div>
-          ))}
-          <ImageSlot src={null} label={addCardLabel} busy={uploading} ratio="aspect-square" onSelect={(file) => openCrop(file, { kind: "image-card-add" })} />
-        </div>
-      </section>
-
-      <section>
-        <h4 className="text-lg font-semibold text-gray-900">Instagram reels</h4>
-        <p className="mt-1 text-sm text-gray-500">Paste a reel link. Its Instagram preview plays directly on the public page.</p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <input value={newInstagramUrl} onChange={(event) => setNewInstagramUrl(event.target.value)} placeholder="https://www.instagram.com/reel/..." className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
-          <button type="button" onClick={addInstagramVideo} disabled={saving} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Play className="h-4 w-4" />Add reel</button>
-        </div>
-        <div className="mt-4 space-y-2">
-          {instagramVideos.map((video, index) => (
-            <div key={video.id} draggable onDragStart={() => setDragging({ type: "instagram", index })} onDragOver={(event) => event.preventDefault()} onDrop={() => handleInstagramDrop(index)} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
-              <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-gray-300" />
-              <input defaultValue={video.instagram_url} onBlur={(event) => updateInstagramVideo(video, event.target.value)} className="min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
-              <button type="button" onClick={() => removeInstagramVideo(video.id)} disabled={saving} className="rounded-md p-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-50" aria-label="Remove Instagram reel"><Trash2 className="h-4 w-4" /></button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <ImageProcessingModal open={Boolean(cropTarget)} file={cropTarget?.file} onCancel={() => setCropTarget(null)} onSave={saveProcessedImage} />
+      <ImageProcessingModal
+        open={Boolean(cropTarget)}
+        file={cropTarget?.file}
+        aspect={cropTarget?.target.kind === "lead" ? leadImageAspect : null}
+        onCancel={() => setCropTarget(null)}
+        onSave={saveProcessedImage}
+      />
     </div>
   );
 }

@@ -34,6 +34,7 @@ const HANDLE_STYLE = {
 const RATIOS = [
   [null, "Freeform"], [1, "1:1 Square"], [4 / 3, "4:3 Landscape"],
   [16 / 9, "16:9 Wide"], [3 / 4, "3:4 Portrait"], [2 / 3, "2:3 Portrait"],
+  [9 / 16, "9:16 Story"],
 ];
 
 export default function ImageProcessingModal({ open, file, aspect = null, onCancel, onSave }) {
@@ -150,7 +151,6 @@ export default function ImageProcessingModal({ open, file, aspect = null, onCanc
       // use width as source of truth for aspect ratio
       const naturalW = dimensions?.width || 1;
       const naturalH = dimensions?.height || 1;
-      const stageAspect = stageRect.width / stageRect.height;
       const imageAspect = naturalW / naturalH;
       // crop coords are relative to image, so ratio in crop-space needs adjusting for stage distortion
       const aspectInCropSpace = selectedAspect / imageAspect;
